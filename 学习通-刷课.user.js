@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         🐮ABC超星学习通网课助手
+// @name         学习通-刷课
 // @namespace    gt
-// @version      1.1.2
+// @version      1.1.3
 // @author       gt
 // @description  超星学习通自动学习助手：使用你自己的 OpenAI 兼容模型 API 完成答题、视频/文档任务与章节切换，密钥仅保存在本地。
 // @license      Proprietary
@@ -13571,7 +13571,7 @@
         return "conic-gradient(#789888 0 100%)";
       });
       const miniBadgeText = vue.computed(() => miniWarningCount.value > 99 ? "99+" : String(miniWarningCount.value));
-      const miniTitle = vue.computed(() => `展开 ABC 助手 · 模型${miniModelState.value === "ok" ? "正常" : miniModelState.value === "error" ? "异常" : "未知"} · ${runtimeStatus.answerPaused ? "答题暂停" : setting.answering ? "答题中" : "答题暂停"}${miniWarningCount.value ? ` · ${miniWarningCount.value} 条警告` : ""}`);
+      const miniTitle = vue.computed(() => `展开 学习通-刷课 · 模型${miniModelState.value === "ok" ? "正常" : miniModelState.value === "error" ? "异常" : "未知"} · ${runtimeStatus.answerPaused ? "答题暂停" : setting.answering ? "答题中" : "答题暂停"}${miniWarningCount.value ? ` · ${miniWarningCount.value} 条警告` : ""}`);
       const backendTabKeys = ["1", "log", "record"];
       const isBackendActive = vue.computed(() => Boolean(uiRoute.transientTab) || backendTabKeys.includes(setting.tabIndex));
       const getPopupContainer = () => {
@@ -13868,7 +13868,7 @@
             vue.createElementVNode("img", {
               class: "mini-logo",
               src: vue.unref(logoUrl),
-              alt: "ABC",
+              alt: "学习通-刷课",
               style: { position: "relative", zIndex: 1 }
             }, null, 8, _hoisted_1),
             vue.createElementVNode("span", {
@@ -13943,9 +13943,9 @@
                     vue.createElementVNode("img", {
                       class: "script-logo",
                       src: vue.unref(logoUrl),
-                      alt: "ABC"
+                      alt: "学习通-刷课"
                     }, null, 8, _hoisted_4),
-                    vue.createTextVNode(" ABC-" + vue.toDisplayString(vue.unref(scriptInfo).version), 1)
+                    vue.createTextVNode(" 学习通-刷课 " + vue.toDisplayString(vue.unref(scriptInfo).version), 1)
                   ]),
                   vue.createElementVNode("button", {
                     class: "abc-ai-entry",
