@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nordic Calm — Sample 6</title>
+  <style>
+    /* ── CSS 变量 ── */
+    :root {
+      --clr-bg:           #f5f0eb;   /* 浅暖米白 */
+      --clr-surface:      #ede6dc;   /* 暖沙米 */
+      --clr-surface-2:    #e4dcd0;   /* 深一度沙米 */
+      --clr-drawer:       #eee8df;   /* 抽屉底色 */
+      --clr-header:       #d6cfc3;   /* 头部横条 */
+      --clr-sage:         #7a9e8e;   /* 鼠尾草绿 */
+      --clr-sage-light:   #a8c4b8;   /* 浅鼠尾草 */
+      --clr-sage-dark:    #4d7b6a;   /* 深鼠尾草 */
+      --clr-text:         #3b3530;   /* 主文字 */
+      --clr-text-muted:   #7a6f66;   /* 次要文字 */
+      --clr-border:       #ccc4b8;   /* 边框 */
+      --clr-bubble-1:     #c8dcd5;   /* 气泡色 A */
+      --clr-bubble-2:     #dcd0c0;   /* 气泡色 B */
+      --clr-bubble-3:     #b8cfc4;   /* 气泡色 C */
+
+      --drawer-w:         440px;
+      --header-h:         60px;
+      --radius-lg:        16px;
+      --radius-md:        10px;
+      --radius-sm:        6px;
+      --shadow-soft:      0 4px 24px rgba(80, 64, 50, 0.12);
+      --shadow-drawer:   -6px 0 32px rgba(80, 64, 50, 0.14);
+      --transition:       0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       头部 Header
+    ══════════════════════════════════════ */
+    .header {
+      height: var(--header-h);
+      background: var(--clr-header);
+      border-bottom: 1px solid var(--clr-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(80, 64, 50, 0.08);
+      position: relative;
+      z-index: 100;
+    }
+
+    .header__logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header__icon {
+      width: 36px;
+      height: 36px;
+      background: var(--clr-sage);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header__icon svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .header__title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--clr-text);
+      letter-spacing: 0.02em;
+    }
+
+    .header__subtitle {
+      font-size: 0.72rem;
+      color: var(--clr-text-muted);
+      margin-top: 1px;
+    }
+
+    .header__actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background var(--transition), transform var(--transition);
+      outline: none;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn--primary {
+      background: var(--clr-sage);
+      color: #fff;
+    }
+    .btn--primary:hover { background: var(--clr-sage-dark); }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--clr-text-muted);
+      border: 1px solid var(--clr-border);
+    }
+    .btn--ghost:hover { background: var(--clr-surface-2); color: var(--clr-text); }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ══════════════════════════════════════
+       主体布局
+    ══════════════════════════════════════ */
+    .layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── 内容区 ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+      transition: margin-right var(--transition);
+      position: relative;
+    }
+
+    .content--shrunk {
+      margin-right: var(--drawer-w);
+    }
+
+    /* 空内容占位 */
+    .content__placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--clr-text-muted);
+      user-select: none;
+    }
+
+    .content__placeholder-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--clr-surface);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .content__placeholder-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+      stroke: var(--clr-sage-light);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .content__placeholder p {
+      font-size: 0.9rem;
+    }
+
+    /* ══════════════════════════════════════
+       右侧抽屉 Drawer  440 px
+    ══════════════════════════════════════ */
+    .drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: var(--drawer-w);
+      height: 100%;
+      background: var(--clr-drawer);
+      border-left: 1px solid var(--clr-border);
+      box-shadow: var(--shadow-drawer);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform var(--transition);
+      z-index: 200;
+      overflow: hidden;
+    }
+
+    .drawer--open {
+      transform: translateX(0);
+    }
+
+    .drawer__header {
+      height: var(--header-h);
+      background: var(--clr-surface-2);
+      border-bottom: 1px solid var(--clr-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+
+    .drawer__title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--clr-text);
+    }
+
+    .drawer__close {
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--clr-text-muted);
+      transition: background var(--transition);
+    }
+
+    .drawer__close:hover { background: var(--clr-surface); color: var(--clr-text); }
+
+    .drawer__close svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .drawer__body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 抽屉内卡片 */
+    .drawer-card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(80,64,50,0.07);
+    }
+
+    .drawer-card__label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--clr-sage);
+      margin-bottom: 8px;
+    }
+
+    .drawer-card__value {
+      font-size: 0.88rem;
+      color: var(--clr-text);
+      line-height: 1.5;
+    }
+
+    .drawer-card__bar {
+      height: 6px;
+      background: var(--clr-surface-2);
+      border-radius: 99px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .drawer-card__bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--clr-sage-light), var(--clr-sage));
+      border-radius: 99px;
+    }
+
+    /* ══════════════════════════════════════
+       悬浮气泡 Floating Bubbles
+    ══════════════════════════════════════ */
+    .bubbles-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.55;
+      animation: floatUp linear infinite;
+      will-change: transform, opacity;
+    }
+
+    @keyframes floatUp {
+      0%   { transform: translateY(0) scale(1);   opacity: 0; }
+      10%  { opacity: 0.55; }
+      90%  { opacity: 0.45; }
+      100% { transform: translateY(-110vh) scale(1.15); opacity: 0; }
+    }
+
+    /* 各气泡个性化 */
+    .bubble:nth-child(1)  { width: 60px;  height: 60px;  left:  5%; background: var(--clr-bubble-1); animation-duration: 18s; animation-delay:  0s; }
+    .bubble:nth-child(2)  { width: 40px;  height: 40px;  left: 14%; background: var(--clr-bubble-2); animation-duration: 22s; animation-delay:  3s; }
+    .bubble:nth-child(3)  { width: 80px;  height: 80px;  left: 25%; background: var(--clr-bubble-3); animation-duration: 26s; animation-delay:  7s; }
+    .bubble:nth-child(4)  { width: 30px;  height: 30px;  left: 38%; background: var(--clr-bubble-1); animation-duration: 20s; animation-delay:  1s; }
+    .bubble:nth-child(5)  { width: 55px;  height: 55px;  left: 50%; background: var(--clr-bubble-2); animation-duration: 24s; animation-delay:  5s; }
+    .bubble:nth-child(6)  { width: 45px;  height: 45px;  left: 63%; background: var(--clr-bubble-3); animation-duration: 19s; animation-delay:  9s; }
+    .bubble:nth-child(7)  { width: 70px;  height: 70px;  left: 74%; background: var(--clr-bubble-1); animation-duration: 28s; animation-delay:  2s; }
+    .bubble:nth-child(8)  { width: 35px;  height: 35px;  left: 85%; background: var(--clr-bubble-2); animation-duration: 21s; animation-delay:  6s; }
+    .bubble:nth-child(9)  { width: 50px;  height: 50px;  left: 92%; background: var(--clr-bubble-3); animation-duration: 23s; animation-delay: 11s; }
+    .bubble:nth-child(10) { width: 25px;  height: 25px;  left: 31%; background: var(--clr-bubble-1); animation-duration: 17s; animation-delay:  4s; }
+
+    /* 让气泡从底部出发 */
+    .bubble { bottom: -120px; }
+
+    /* ══════════════════════════════════════
+       滚动条美化
+    ══════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--clr-sage-light); }
+
+    /* ══════════════════════════════════════
+       课程概览区 Course Overview
+    ══════════════════════════════════════ */
+    .course-overview {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px 32px;
+      align-items: start;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .course-overview__meta { display: flex; flex-direction: column; gap: 8px; }
+
+    .course-overview__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--clr-sage-dark);
+      background: color-mix(in srgb, var(--clr-sage-light) 30%, transparent);
+      padding: 3px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--clr-sage-light);
+      width: fit-content;
+    }
+
+    .course-overview__title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--clr-text);
+      line-height: 1.3;
+    }
+
+    .course-overview__info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .course-overview__info-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      color: var(--clr-text-muted);
+    }
+
+    .course-overview__info-item svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: var(--clr-sage);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .course-overview__stats {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .course-overview__progress-ring {
+      position: relative;
+      width: 76px;
+      height: 76px;
+    }
+
+    .course-overview__progress-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .course-overview__progress-ring circle {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+
+    .ring-track  { stroke: var(--clr-surface-2); }
+    .ring-fill   {
+      stroke: var(--clr-sage);
+      stroke-dasharray: 201; /* 2π×32 ≈ 201 */
+      stroke-dashoffset: calc(201 * (1 - 0.62));
+      transition: stroke-dashoffset 0.8s ease;
+    }
+
+    .course-overview__ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--clr-text);
+      line-height: 1.1;
+    }
+
+    .course-overview__ring-label span {
+      font-size: 0.6rem;
+      font-weight: 400;
+      color: var(--clr-text-muted);
+    }
+
+    .course-overview__stat-chips {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-chip {
+      text-align: center;
+      background: var(--clr-surface-2);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      min-width: 52px;
+    }
+
+    .stat-chip__num {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--clr-sage-dark);
+      display: block;
+    }
+
+    .stat-chip__lbl {
+      font-size: 0.66rem;
+      color: var(--clr-text-muted);
+      display: block;
+      margin-top: 1px;
+    }
+
+    /* ══════════════════════════════════════
+       播放控制条 Player Bar
+    ══════════════════════════════════════ */
+    .player-bar {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .player-bar__now {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .player-bar__chapter-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--clr-sage-dark);
+      background: color-mix(in srgb, var(--clr-sage-light) 25%, transparent);
+      border: 1px solid var(--clr-sage-light);
+      padding: 2px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+
+    .player-bar__lesson-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--clr-text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .player-bar__time {
+      font-size: 0.78rem;
+      color: var(--clr-text-muted);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 进度滑条 */
+    .player-bar__seek {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .player-bar__track {
+      flex: 1;
+      height: 5px;
+      background: var(--clr-surface-2);
+      border-radius: 99px;
+      position: relative;
+      cursor: pointer;
+      overflow: visible;
+    }
+
+    .player-bar__track-fill {
+      height: 100%;
+      width: 38%;
+      background: linear-gradient(90deg, var(--clr-sage-light), var(--clr-sage));
+      border-radius: 99px;
+      position: relative;
+    }
+
+    .player-bar__track-fill::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--clr-sage-dark);
+      box-shadow: 0 0 0 2px var(--clr-surface);
+    }
+
+    /* 控制按钮行 */
+    .player-bar__controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ctrl-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: var(--clr-surface-2);
+      color: var(--clr-text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), color var(--transition), transform var(--transition);
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn:hover { background: var(--clr-border); color: var(--clr-text); }
+    .ctrl-btn:active { transform: scale(0.92); }
+
+    .ctrl-btn--play {
+      width: 42px;
+      height: 42px;
+      background: var(--clr-sage);
+      color: #fff;
+    }
+
+    .ctrl-btn--play:hover { background: var(--clr-sage-dark); }
+
+    .ctrl-btn svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ctrl-btn--play svg { width: 16px; height: 16px; }
+
+    .player-bar__spacer { flex: 1; }
+
+    .player-bar__speed {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--clr-sage-dark);
+      background: color-mix(in srgb, var(--clr-sage-light) 22%, transparent);
+      border: 1px solid var(--clr-sage-light);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .player-bar__speed:hover { background: color-mix(in srgb, var(--clr-sage-light) 40%, transparent); }
+
+    .player-bar__vol-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .player-bar__vol-row svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: var(--clr-text-muted);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .player-bar__vol-slider {
+      width: 60px;
+      height: 4px;
+      background: var(--clr-surface-2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .player-bar__vol-fill {
+      width: 70%;
+      height: 100%;
+      background: var(--clr-sage-light);
+      border-radius: 99px;
+    }
+
+    /* ══════════════════════════════════════
+       任务时间线 Task Timeline
+    ══════════════════════════════════════ */
+    .timeline-section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .timeline-section__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .timeline-section__title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--clr-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timeline-section__title::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 16px;
+      background: var(--clr-sage);
+      border-radius: 99px;
+    }
+
+    .timeline-section__filter {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filter-pill {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--clr-border);
+      background: transparent;
+      color: var(--clr-text-muted);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .filter-pill:hover,
+    .filter-pill--active {
+      background: var(--clr-sage);
+      border-color: var(--clr-sage);
+      color: #fff;
+    }
+
+    /* 时间线主轨道 */
+    .timeline {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 24px;
+      bottom: 24px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--clr-sage-light), var(--clr-border));
+      border-radius: 99px;
+    }
+
+    .tl-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 10px 0;
+      position: relative;
+    }
+
+    /* 节点圆圈 */
+    .tl-dot {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+      transition: transform var(--transition);
+    }
+
+    .tl-item:hover .tl-dot { transform: scale(1.1); }
+
+    .tl-dot--done {
+      background: var(--clr-sage);
+      color: #fff;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-sage-light) 40%, transparent);
+    }
+
+    .tl-dot--current {
+      background: var(--clr-sage-dark);
+      color: #fff;
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--clr-sage) 30%, transparent);
+    }
+
+    .tl-dot--pending {
+      background: var(--clr-surface-2);
+      color: var(--clr-text-muted);
+      border: 2px solid var(--clr-border);
+    }
+
+    .tl-dot svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* 卡片内容 */
+    .tl-card {
+      flex: 1;
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(80,64,50,0.06);
+      transition: box-shadow var(--transition), border-color var(--transition);
+      cursor: pointer;
+    }
+
+    .tl-card:hover {
+      border-color: var(--clr-sage-light);
+      box-shadow: 0 4px 16px rgba(80,64,50,0.12);
+    }
+
+    .tl-card--current {
+      border-color: var(--clr-sage);
+      background: color-mix(in srgb, var(--clr-sage-light) 12%, var(--clr-surface));
+    }
+
+    .tl-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .tl-card__name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--clr-text);
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .tl-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 99px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tl-badge--done    { background: color-mix(in srgb, var(--clr-sage-light) 35%, transparent); color: var(--clr-sage-dark); }
+    .tl-badge--current { background: var(--clr-sage); color: #fff; }
+    .tl-badge--pending { background: var(--clr-surface-2); color: var(--clr-text-muted); border: 1px solid var(--clr-border); }
+    .tl-badge--homework { background: color-mix(in srgb, #c8a86a 30%, transparent); color: #7a5a2a; }
+
+    .tl-card__meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tl-card__meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.73rem;
+      color: var(--clr-text-muted);
+    }
+
+    .tl-card__meta-item svg {
+      width: 11px;
+      height: 11px;
+      fill: none;
+      stroke: var(--clr-text-muted);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .tl-card__progress {
+      margin-top: 8px;
+      height: 3px;
+      background: var(--clr-surface-2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .tl-card__progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--clr-sage-light), var(--clr-sage));
+      border-radius: 99px;
+    }
+
+    /* ══════════════════════════════════════
+       页面网格
+    ══════════════════════════════════════ */
+    .page {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding-bottom: 24px;
+    }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .side-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    @media (max-width: 1200px) {
+      .work-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ══════════════════════════════════════
+       异常状态横幅
+    ══════════════════════════════════════ */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 9px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.76rem;
+      line-height: 1.4;
+      background: #f6e9d8;
+      border: 1px solid #ddc4a2;
+      color: #7a5628;
+      transition: background var(--transition), border-color var(--transition), color var(--transition);
+    }
+
+    .status-banner--ok {
+      background: color-mix(in srgb, var(--clr-sage-light) 24%, transparent);
+      border-color: var(--clr-sage-light);
+      color: var(--clr-sage-dark);
+    }
+
+    .status-banner__dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #c9975a;
+      flex-shrink: 0;
+    }
+
+    .status-banner--ok .status-banner__dot { background: var(--clr-sage); }
+
+    .status-banner__text { flex: 1; }
+
+    .status-banner__action {
+      border: 1px solid currentColor;
+      background: transparent;
+      color: inherit;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 99px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .status-banner__action:hover { background: rgba(255, 255, 255, 0.35); }
+
+    /* ══════════════════════════════════════
+       随堂练习
+    ══════════════════════════════════════ */
+    .quiz-card,
+    .log-card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--clr-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 4px;
+      height: 14px;
+      background: var(--clr-sage);
+      border-radius: 99px;
+    }
+
+    .card-count {
+      font-size: 0.66rem;
+      color: var(--clr-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quiz-question {
+      font-size: 0.86rem;
+      font-weight: 600;
+      line-height: 1.55;
+      margin: 12px 0 14px;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quiz-opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      padding: 8px 11px;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--clr-text);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .quiz-opt:hover {
+      border-color: var(--clr-sage-light);
+      background: color-mix(in srgb, var(--clr-sage-light) 14%, transparent);
+    }
+
+    .quiz-opt--selected {
+      border-color: var(--clr-sage);
+      background: color-mix(in srgb, var(--clr-sage-light) 22%, transparent);
+    }
+
+    .quiz-opt__key {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--clr-surface-2);
+      color: var(--clr-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.66rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .quiz-opt--selected .quiz-opt__key {
+      background: var(--clr-sage);
+      color: #fff;
+    }
+
+    .quiz-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .quiz-feedback {
+      font-size: 0.7rem;
+      color: var(--clr-sage-dark);
+      min-height: 16px;
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .quiz-feedback--wrong { color: #a05a3a; }
+
+    .btn--sm {
+      padding: 6px 12px;
+      font-size: 0.72rem;
+    }
+
+    /* ══════════════════════════════════════
+       运行日志
+    ══════════════════════════════════════ */
+    .log-clear {
+      border: none;
+      background: transparent;
+      color: var(--clr-text-muted);
+      font-size: 0.68rem;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .log-clear:hover { background: var(--clr-surface-2); color: var(--clr-text); }
+
+    .log-list {
+      list-style: none;
+      margin-top: 10px;
+      max-height: 196px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-family: 'Cascadia Mono', Consolas, monospace;
+      font-size: 0.66rem;
+      line-height: 1.45;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 8px;
+      color: var(--clr-text-muted);
+    }
+
+    .log-item time {
+      color: var(--clr-sage-dark);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .log-item--warn { color: #8a5a2a; }
+    .log-item--warn time { color: #b07a3c; }
+
+    /* ══════════════════════════════════════
+       设置层
+    ══════════════════════════════════════ */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(59, 53, 48, 0.30);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 20px;
+    }
+
+    .overlay--open { display: flex; }
+
+    .settings {
+      width: 430px;
+      max-width: 100%;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      background: var(--clr-drawer);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 24px 64px rgba(50, 40, 30, 0.28);
+      padding: 22px 24px 20px;
+      animation: settingsIn 0.22s ease-out;
+    }
+
+    @keyframes settingsIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .settings__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .settings__title { font-size: 0.95rem; font-weight: 700; }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--clr-border);
+    }
+
+    .settings-row:last-of-type { border-bottom: none; }
+
+    .settings-row__label { font-size: 0.8rem; font-weight: 500; }
+    .settings-row__hint { font-size: 0.66rem; color: var(--clr-text-muted); margin-top: 2px; }
+
+    .switch {
+      width: 40px;
+      height: 22px;
+      border-radius: 99px;
+      background: var(--clr-surface-2);
+      border: 1px solid var(--clr-border);
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(60, 45, 30, 0.25);
+      transition: transform var(--transition);
+    }
+
+    .switch--on {
+      background: var(--clr-sage);
+      border-color: var(--clr-sage-dark);
+    }
+
+    .switch--on::after { transform: translateX(18px); }
+
+    .seg {
+      display: flex;
+      gap: 4px;
+      background: var(--clr-surface-2);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+    }
+
+    .seg button {
+      border: none;
+      background: transparent;
+      color: var(--clr-text-muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .seg button.seg--active {
+      background: var(--clr-surface);
+      color: var(--clr-sage-dark);
+      box-shadow: 0 1px 3px rgba(60, 45, 30, 0.15);
+    }
+
+    .settings__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    /* ══════════════════════════════════════
+       悬浮气泡 · Toast
+    ══════════════════════════════════════ */
+    .float-bubble {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: var(--clr-sage);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 28px rgba(77, 123, 106, 0.38);
+      z-index: 300;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .float-bubble:hover { transform: translateY(-2px) scale(1.05); }
+
+    .float-bubble--hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.7);
+    }
+
+    .float-bubble svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .float-bubble__badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 99px;
+      background: #b8563a;
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+      border: 2px solid var(--clr-bg);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 30px;
+      transform: translate(-50%, 16px);
+      background: var(--clr-text);
+      color: #fff;
+      font-size: 0.76rem;
+      padding: 9px 18px;
+      border-radius: 99px;
+      box-shadow: 0 8px 24px rgba(40, 32, 26, 0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      z-index: 600;
+      white-space: nowrap;
+    }
+
+    .toast--show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 悬浮气泡层 -->
+  <div class="bubbles-layer" aria-hidden="true">
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+  </div>
+
+  <!-- 头部 -->
+  <header class="header">
+    <div class="header__logo">
+      <div class="header__icon">
+        <!-- 叶片图标 -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6 2 3 8 3 14c0 4.4 3.6 8 9 8s9-3.6 9-8c0-6-3-12-9-12z"/>
+          <line x1="12" y1="22" x2="12" y2="11"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header__title">Nordic Calm</div>
+        <div class="header__subtitle">Sample 6 · AGY</div>
+      </div>
+    </div>
+    <div class="header__actions">
+      <button class="btn btn--ghost" id="btnToggle" aria-expanded="false" aria-controls="drawer">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        详情面板
+      </button>
+      <button class="btn btn--primary">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        新建
+      </button>
+    </div>
+  </header>
+
+  <!-- 主体 -->
+  <div class="layout">
+
+    <!-- 内容区（空） -->
+    <main class="content" id="mainContent">
+      <div class="page">
+
+        <!-- 课程概览 -->
+        <section class="course-overview" aria-label="课程概览">
+          <div class="course-overview__meta">
+            <span class="course-overview__badge">超星 · 正在学习</span>
+            <h1 class="course-overview__title">数据结构与算法 · 第 3 章<br>树与二叉树</h1>
+            <div class="course-overview__info">
+              <span class="course-overview__info-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+                李明远 · 副教授
+              </span>
+              <span class="course-overview__info-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                2.5 学时
+              </span>
+              <span class="course-overview__info-item">
+                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+                截止 10-25 23:59
+              </span>
+            </div>
+          </div>
+          <div class="course-overview__stats">
+            <div class="course-overview__progress-ring">
+              <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true">
+                <circle class="ring-track" cx="38" cy="38" r="32"/>
+                <circle class="ring-fill" cx="38" cy="38" r="32"/>
+              </svg>
+              <div class="course-overview__ring-label">62%<span>已完成</span></div>
+            </div>
+            <div class="course-overview__stat-chips">
+              <div class="stat-chip"><span class="stat-chip__num">4</span><span class="stat-chip__lbl">任务</span></div>
+              <div class="stat-chip"><span class="stat-chip__num">2</span><span class="stat-chip__lbl">已完成</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 播放控制条 -->
+        <section class="player-bar" aria-label="播放控制">
+          <div class="player-bar__now">
+            <span class="player-bar__chapter-tag">3.2</span>
+            <span class="player-bar__lesson-name">二叉树的遍历与递归实现</span>
+            <span class="player-bar__time" id="timeLabel">12:36 / 32:48</span>
+          </div>
+
+          <div class="player-bar__seek">
+            <div class="player-bar__track" id="seekTrack" role="slider" aria-label="播放进度"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="38" tabindex="0">
+              <div class="player-bar__track-fill" id="seekFill"></div>
+            </div>
+          </div>
+
+          <div class="player-bar__controls">
+            <button class="ctrl-btn" id="btnPrev" title="上一节" aria-label="上一节">
+              <svg viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+            </button>
+            <button class="ctrl-btn ctrl-btn--play" id="btnPlay" title="暂停" aria-label="暂停">
+              <svg viewBox="0 0 24 24" id="playIcon"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            </button>
+            <button class="ctrl-btn" id="btnNext" title="下一节" aria-label="下一节">
+              <svg viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            </button>
+
+            <span class="player-bar__spacer"></span>
+
+            <div class="player-bar__vol-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+              <div class="player-bar__vol-slider"><div class="player-bar__vol-fill"></div></div>
+            </div>
+
+            <button class="player-bar__speed" id="btnSpeed" title="切换倍速">1.0×</button>
+            <button class="btn btn--ghost btn--sm" id="btnSettings">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+              设置
+            </button>
+          </div>
+
+          <div class="status-banner" id="statusBanner" role="status">
+            <span class="status-banner__dot"></span>
+            <span class="status-banner__text" id="statusText">播放中断 · 网络抖动，已自动降级至 720p</span>
+            <button class="status-banner__action" id="btnRetry">重连</button>
+          </div>
+        </section>
+
+        <div class="work-grid">
+
+          <!-- 任务时间线 -->
+          <section class="timeline-section" aria-label="任务时间线">
+            <div class="timeline-section__header">
+              <div class="timeline-section__title">任务时间线</div>
+              <div class="timeline-section__filter">
+                <button class="filter-pill filter-pill--active" data-filter="all">全部</button>
+                <button class="filter-pill" data-filter="todo">未完成</button>
+              </div>
+            </div>
+
+            <div class="timeline">
+              <div class="tl-item" data-done="1">
+                <div class="tl-dot tl-dot--done">
+                  <svg viewBox="0 0 24 24"><polyline points="4 12 9 17 20 6"/></svg>
+                </div>
+                <div class="tl-card">
+                  <div class="tl-card__top">
+                    <div class="tl-card__name">3.1 树与二叉树的基本概念</div>
+                    <span class="tl-badge tl-badge--done">已完成</span>
+                  </div>
+                  <div class="tl-card__meta">
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      18:20 / 18:20
+                    </span>
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                      视频 · 已看完
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tl-item" data-done="0">
+                <div class="tl-dot tl-dot--current">
+                  <svg viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                </div>
+                <div class="tl-card tl-card--current">
+                  <div class="tl-card__top">
+                    <div class="tl-card__name">3.2 二叉树的遍历与递归实现</div>
+                    <span class="tl-badge tl-badge--current">进行中</span>
+                  </div>
+                  <div class="tl-card__meta">
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      12:36 / 32:48
+                    </span>
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                      已完成 38%
+                    </span>
+                  </div>
+                  <div class="tl-card__progress"><div class="tl-card__progress-fill" style="width: 38%"></div></div>
+                </div>
+              </div>
+
+              <div class="tl-item" data-done="0">
+                <div class="tl-dot tl-dot--pending">3</div>
+                <div class="tl-card">
+                  <div class="tl-card__top">
+                    <div class="tl-card__name">3.3 线索二叉树与哈夫曼编码</div>
+                    <span class="tl-badge tl-badge--pending">未开始</span>
+                  </div>
+                  <div class="tl-card__meta">
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      24:10
+                    </span>
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><polygon points="10 9 15 12 10 15 10 9"/></svg>
+                      视频 · 待观看
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tl-item" data-done="0">
+                <div class="tl-dot tl-dot--pending">
+                  <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>
+                </div>
+                <div class="tl-card">
+                  <div class="tl-card__top">
+                    <div class="tl-card__name">章节测验 · 树与二叉树</div>
+                    <span class="tl-badge tl-badge--homework">作业</span>
+                  </div>
+                  <div class="tl-card__meta">
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><path d="M9 11l3 3 6-6"/><path d="M21 12a9 9 0 1 1-5.6-8.3"/></svg>
+                      10 题 · 60 分钟
+                    </span>
+                    <span class="tl-card__meta-item">
+                      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+                      截止 10-25 23:59
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 右列：答题 + 日志 -->
+          <aside class="side-stack">
+
+            <section class="quiz-card" aria-label="随堂练习">
+              <div class="card-head">
+                <div class="card-title">随堂练习</div>
+                <span class="card-count" id="quizCount">第 1 / 5 题</span>
+              </div>
+              <p class="quiz-question" id="quizQuestion">对二叉搜索树进行中序遍历，得到的节点序列具有什么特性？</p>
+              <div class="quiz-options" id="quizOptions">
+                <button class="quiz-opt" data-key="A"><span class="quiz-opt__key">A</span>递增有序</button>
+                <button class="quiz-opt" data-key="B"><span class="quiz-opt__key">B</span>递减有序</button>
+                <button class="quiz-opt" data-key="C"><span class="quiz-opt__key">C</span>与插入顺序一致</button>
+                <button class="quiz-opt" data-key="D"><span class="quiz-opt__key">D</span>完全随机</button>
+              </div>
+              <div class="quiz-foot">
+                <div class="quiz-feedback" id="quizFeedback"></div>
+                <button class="btn btn--primary btn--sm" id="btnSubmitQuiz">提交答案</button>
+              </div>
+            </section>
+
+            <section class="log-card" aria-label="运行日志">
+              <div class="card-head">
+                <div class="card-title">运行日志</div>
+                <button class="log-clear" id="btnClearLog">清空</button>
+              </div>
+              <ul class="log-list" id="logList">
+                <li class="log-item"><time>10:21:04</time><span>已连接课程服务 · 节点 cn-sh-03</span></li>
+                <li class="log-item"><time>10:21:06</time><span>检测到章节 3.2 正在播放</span></li>
+                <li class="log-item"><time>10:24:18</time><span>心跳正常 · 延迟 86 ms</span></li>
+                <li class="log-item log-item--warn"><time>10:31:52</time><span>网络抖动，播放器降级至 720p</span></li>
+                <li class="log-item"><time>10:32:03</time><span>码率恢复 1080p · 缓冲 4.2 s</span></li>
+              </ul>
+            </section>
+
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <!-- 右侧抽屉 440 px -->
+    <aside class="drawer" id="drawer" role="complementary" aria-label="详情面板">
+      <div class="drawer__header">
+        <span class="drawer__title">详情面板</span>
+        <button class="drawer__close" id="btnClose" aria-label="关闭面板">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer__body">
+        <div class="drawer-card">
+          <div class="drawer-card__label">当前课程</div>
+          <div class="drawer-card__value">数据结构与算法 · 第 3 章<br><strong>3.2 二叉树的遍历与递归实现</strong></div>
+        </div>
+
+        <div class="drawer-card">
+          <div class="drawer-card__label">章节进度</div>
+          <div class="drawer-card__value">已完成 &nbsp;<strong>38%</strong> · 剩余 20:12</div>
+          <div class="drawer-card__bar">
+            <div class="drawer-card__bar-fill" style="width: 38%"></div>
+          </div>
+        </div>
+
+        <div class="drawer-card">
+          <div class="drawer-card__label">今日学习</div>
+          <div class="drawer-card__value">观看 48 分钟 · 答题 12 题 · 正确率 <strong>83%</strong></div>
+        </div>
+
+        <div class="drawer-card">
+          <div class="drawer-card__label">连接质量</div>
+          <div class="drawer-card__value">延迟 86 ms · 丢包 <strong>0.4%</strong></div>
+          <div class="drawer-card__bar">
+            <div class="drawer-card__bar-fill" style="width: 88%"></div>
+          </div>
+        </div>
+
+        <div class="drawer-card">
+          <div class="drawer-card__label">快捷操作</div>
+          <div class="drawer-card__value">
+            <button class="btn btn--ghost btn--sm" id="drawerSettings" style="margin: 4px 6px 0 0;">打开设置</button>
+            <button class="btn btn--ghost btn--sm" id="drawerReconnect" style="margin-top: 4px;">重连服务</button>
+          </div>
+        </div>
+
+        <p style="font-size: 0.68rem; color: var(--clr-text-muted); line-height: 1.6; margin-top: 4px;">
+          所有交互均在本地模拟，不访问外部服务。
+        </p>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- 悬浮气泡（抽屉收起时出现） -->
+  <button class="float-bubble" id="floatBubble" aria-label="展开详情面板">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.3-.6L3 21l1.7-5.1a8.4 8.4 0 1 1 16.3-4.4z"/>
+      <line x1="8" y1="11" x2="16" y2="11"/>
+      <line x1="8" y1="15" x2="13" y2="15"/>
+    </svg>
+    <span class="float-bubble__badge">1</span>
+  </button>
+
+  <!-- 设置层 -->
+  <div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="设置">
+    <div class="settings">
+      <div class="settings__head">
+        <div class="settings__title">设置</div>
+        <button class="drawer__close" id="settingsClose" aria-label="关闭设置">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-row__label">自动播放下一节</div>
+          <div class="settings-row__hint">本节结束后继续播放 3.3</div>
+        </div>
+        <button class="switch switch--on" role="switch" aria-checked="true" aria-label="自动播放下一节"></button>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-row__label">后台静默运行</div>
+          <div class="settings-row__hint">切到其他标签页时保持心跳</div>
+        </div>
+        <button class="switch switch--on" role="switch" aria-checked="true" aria-label="后台静默运行"></button>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-row__label">自动提交答案</div>
+          <div class="settings-row__hint">仅对随堂练习生效，章节测验不自动提交</div>
+        </div>
+        <button class="switch" role="switch" aria-checked="false" aria-label="自动提交答案"></button>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-row__label">播放倍速</div>
+          <div class="settings-row__hint">与播放器按钮同步</div>
+        </div>
+        <div class="seg" id="speedSeg">
+          <button data-speed="0.75">0.75×</button>
+          <button data-speed="1" class="seg--active">1.0×</button>
+          <button data-speed="1.25">1.25×</button>
+          <button data-speed="1.5">1.5×</button>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-row__label">日志保留</div>
+          <div class="settings-row__hint">本地日志仅用于排查播放问题</div>
+        </div>
+        <div class="seg" id="logSeg">
+          <button data-retain="7" class="seg--active">7 天</button>
+          <button data-retain="30">30 天</button>
+          <button data-retain="0">永久</button>
+        </div>
+      </div>
+
+      <div class="settings__actions">
+        <button class="btn btn--ghost" id="settingsCancel">取消</button>
+        <button class="btn btn--primary" id="settingsSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+      /* ── 抽屉 / 悬浮气泡 ── */
+      const drawer = $('#drawer');
+      const mainContent = $('#mainContent');
+      const btnToggle = $('#btnToggle');
+      const btnClose = $('#btnClose');
+      const floatBubble = $('#floatBubble');
+      const isOpen = () => drawer.classList.contains('drawer--open');
+
+      function openDrawer() {
+        drawer.classList.add('drawer--open');
+        mainContent.classList.add('content--shrunk');
+        btnToggle.setAttribute('aria-expanded', 'true');
+        floatBubble.classList.add('float-bubble--hidden');
+      }
+
+      function closeDrawer() {
+        drawer.classList.remove('drawer--open');
+        mainContent.classList.remove('content--shrunk');
+        btnToggle.setAttribute('aria-expanded', 'false');
+        floatBubble.classList.remove('float-bubble--hidden');
+      }
+
+      btnToggle.addEventListener('click', function () { isOpen() ? closeDrawer() : openDrawer(); });
+      btnClose.addEventListener('click', closeDrawer);
+      floatBubble.addEventListener('click', openDrawer);
+
+      /* ── Toast ── */
+      const toastEl = $('#toast');
+      let toastTimer = null;
+
+      function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('toast--show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove('toast--show'); }, 1800);
+      }
+
+      /* ── 运行日志 ── */
+      const logList = $('#logList');
+
+      function addLog(text, warn) {
+        const li = document.createElement('li');
+        li.className = 'log-item' + (warn ? ' log-item--warn' : '');
+        const t = document.createElement('time');
+        t.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        const s = document.createElement('span');
+        s.textContent = text;
+        li.appendChild(t);
+        li.appendChild(s);
+        logList.appendChild(li);
+        logList.scrollTop = logList.scrollHeight;
+      }
+
+      $('#btnClearLog').addEventListener('click', function () {
+        logList.innerHTML = '';
+        addLog('日志已清空');
+        toast('日志已清空');
+      });
+
+      /* ── 播放器 ── */
+      const TOTAL = 32 * 60 + 48;
+      let current = 12 * 60 + 36;
+      let playing = true;
+      let speed = 1.0;
+
+      const timeLabel = $('#timeLabel');
+      const seekTrack = $('#seekTrack');
+      const seekFill = $('#seekFill');
+      const btnPlay = $('#btnPlay');
+      const btnSpeed = $('#btnSpeed');
+
+      const ICON_PAUSE = '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+      const ICON_PLAY = '<svg viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20 7 4"/></svg>';
+
+      function fmt(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
+      }
+
+      function renderPlayback() {
+        timeLabel.textContent = fmt(current) + ' / ' + fmt(TOTAL);
+        const pct = Math.min(100, (current / TOTAL) * 100);
+        seekFill.style.width = pct + '%';
+        seekTrack.setAttribute('aria-valuenow', String(Math.round(pct)));
+      }
+
+      function renderPlayState() {
+        btnPlay.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+        btnPlay.title = playing ? '暂停' : '播放';
+        btnPlay.setAttribute('aria-label', playing ? '暂停' : '播放');
+      }
+
+      btnPlay.addEventListener('click', function () {
+        playing = !playing;
+        renderPlayState();
+        addLog(playing ? '继续播放 3.2' : '已暂停播放');
+      });
+
+      setInterval(function () {
+        if (!playing) return;
+        current = Math.min(TOTAL, current + speed);
+        renderPlayback();
+        if (current >= TOTAL) {
+          playing = false;
+          renderPlayState();
+          toast('本章已播放完毕');
+          addLog('章节 3.2 播放完毕');
+        }
+      }, 1000);
+
+      seekTrack.addEventListener('click', function (e) {
+        const rect = seekTrack.getBoundingClientRect();
+        const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        current = ratio * TOTAL;
+        renderPlayback();
+      });
+
+      const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+      const SPEED_LABEL = { '0.75': '0.75×', '1': '1.0×', '1.25': '1.25×', '1.5': '1.5×', '2': '2.0×' };
+
+      function setSpeed(v) {
+        speed = v;
+        btnSpeed.textContent = SPEED_LABEL[String(v)] || (v + '×');
+        $$('#speedSeg button').forEach(function (b) {
+          b.classList.toggle('seg--active', Number(b.dataset.speed) === v);
+        });
+      }
+
+      btnSpeed.addEventListener('click', function () {
+        const idx = SPEEDS.indexOf(speed);
+        const next = SPEEDS[(idx + 1) % SPEEDS.length];
+        setSpeed(next);
+        addLog('播放倍速切换为 ' + SPEED_LABEL[String(next)]);
+        toast('倍速 ' + SPEED_LABEL[String(next)]);
+      });
+
+      /* ── 异常状态 / 重连 ── */
+      const statusBanner = $('#statusBanner');
+      const statusText = $('#statusText');
+      const btnRetry = $('#btnRetry');
+
+      function reconnect() {
+        statusBanner.classList.add('status-banner--ok');
+        statusText.textContent = '已重新连接 · 1080p · 延迟 72 ms';
+        btnRetry.style.display = 'none';
+        addLog('重连成功 · 延迟 72 ms');
+        toast('已恢复 1080p');
+      }
+
+      btnRetry.addEventListener('click', reconnect);
+      $('#drawerReconnect').addEventListener('click', reconnect);
+
+      renderPlayback();
+      renderPlayState();
+
+      /* ── 随堂练习 ── */
+      const quizOptions = $('#quizOptions');
+      const quizFeedback = $('#quizFeedback');
+      let selectedKey = null;
+      let quizCount = 1;
+
+      quizOptions.addEventListener('click', function (e) {
+        const btn = e.target.closest('.quiz-opt');
+        if (!btn) return;
+        $$('.quiz-opt').forEach(function (o) { o.classList.remove('quiz-opt--selected'); });
+        btn.classList.add('quiz-opt--selected');
+        selectedKey = btn.dataset.key;
+        quizFeedback.textContent = '';
+        quizFeedback.classList.remove('quiz-feedback--wrong');
+      });
+
+      $('#btnSubmitQuiz').addEventListener('click', function () {
+        if (!selectedKey) {
+          quizFeedback.textContent = '请先选择一个答案';
+          quizFeedback.classList.add('quiz-feedback--wrong');
+          return;
+        }
+        if (selectedKey === 'A') {
+          quizFeedback.textContent = '回答正确 · 中序遍历按 左→根→右 输出，BST 结果递增';
+          quizFeedback.classList.remove('quiz-feedback--wrong');
+          addLog('随堂练习第 ' + quizCount + ' 题回答正确');
+          toast('回答正确');
+        } else {
+          quizFeedback.textContent = '再想想：中序遍历顺序是 左→根→右';
+          quizFeedback.classList.add('quiz-feedback--wrong');
+          addLog('随堂练习第 ' + quizCount + ' 题回答错误', true);
+        }
+        quizCount = quizCount >= 5 ? 1 : quizCount + 1;
+        $('#quizCount').textContent = '第 ' + quizCount + ' / 5 题';
+      });
+
+      /* ── 时间线筛选 ── */
+      $$('.filter-pill').forEach(function (pill) {
+        pill.addEventListener('click', function () {
+          $$('.filter-pill').forEach(function (p) { p.classList.remove('filter-pill--active'); });
+          pill.classList.add('filter-pill--active');
+          const mode = pill.dataset.filter;
+          $$('.tl-item').forEach(function (item) {
+            item.style.display = (mode === 'todo' && item.dataset.done === '1') ? 'none' : '';
+          });
+        });
+      });
+
+      /* ── 设置层 ── */
+      const overlay = $('#settingsOverlay');
+
+      function openSettings() {
+        overlay.classList.add('overlay--open');
+      }
+
+      function closeSettings() {
+        overlay.classList.remove('overlay--open');
+      }
+
+      $('#btnSettings').addEventListener('click', openSettings);
+      $('#drawerSettings').addEventListener('click', function () {
+        closeDrawer();
+        openSettings();
+      });
+      $('#settingsClose').addEventListener('click', closeSettings);
+      $('#settingsCancel').addEventListener('click', closeSettings);
+
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeSettings();
+      });
+
+      $$('.switch').forEach(function (sw) {
+        sw.addEventListener('click', function () {
+          const on = sw.classList.toggle('switch--on');
+          sw.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+      });
+
+      $$('#logSeg button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          $$('#logSeg button').forEach(function (x) { x.classList.remove('seg--active'); });
+          b.classList.add('seg--active');
+        });
+      });
+
+      $$('#speedSeg button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          setSpeed(Number(b.dataset.speed));
+        });
+      });
+
+      $('#settingsSave').addEventListener('click', function () {
+        closeSettings();
+        addLog('设置已保存 · 倍速 ' + btnSpeed.textContent);
+        toast('设置已保存');
+      });
+
+      /* ── ESC 关闭 ── */
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if (overlay.classList.contains('overlay--open')) closeSettings();
+        else if (isOpen()) closeDrawer();
+      });
+    })();
+  </script>
+
+</body>
+</html>

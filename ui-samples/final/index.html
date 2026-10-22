@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ABC 学习助手 · 最终紧凑版</title>
+  <style>
+    :root {
+      --page: #e9e8e2;
+      --paper: #f7f4ee;
+      --surface: #fffdf8;
+      --surface-2: #efede6;
+      --ink: #343a35;
+      --ink-2: #59635c;
+      --muted: #828b84;
+      --line: rgba(70, 83, 74, .14);
+      --line-soft: rgba(70, 83, 74, .09);
+      --sage: #789888;
+      --sage-deep: #4f6f5f;
+      --sage-soft: #e7eee8;
+      --amber: #b18454;
+      --mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--page);
+      color: var(--ink);
+      font: 13px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+
+    button {
+      border: 0;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .scene {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(255,255,255,.56), transparent 28%),
+        linear-gradient(135deg, #efeee8 0%, #e3e3dc 100%);
+    }
+
+    .course-page {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 222px 1fr;
+      pointer-events: none;
+      user-select: none;
+      color: #7e877f;
+      filter: saturate(.7);
+    }
+
+    .course-side {
+      padding: 30px 22px;
+      border-right: 1px solid rgba(70,83,74,.08);
+      background: rgba(249,247,242,.7);
+      backdrop-filter: blur(10px);
+    }
+
+    .course-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      color: #5e6a61;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .course-brand span {
+      display: grid;
+      place-items: center;
+      width: 23px;
+      height: 23px;
+      border-radius: 6px;
+      background: #dce4dc;
+      color: #56665a;
+      font-size: 9px;
+      letter-spacing: .04em;
+    }
+
+    .course-side h1 {
+      margin: 0 0 25px;
+      color: #3c473f;
+      font: 600 18px/1.4 "Songti SC", "STSong", "Noto Serif SC", serif;
+    }
+
+    .chapters {
+      display: grid;
+      gap: 15px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 11px;
+    }
+
+    .chapters li {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #929b94;
+    }
+
+    .chapters li::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #c8d0c9;
+    }
+
+    .chapters li.active { color: var(--sage-deep); font-weight: 600; }
+    .chapters li.active::before { background: var(--sage); }
+
+    .course-main {
+      padding: 62px 64px;
+    }
+
+    .course-kicker {
+      margin-bottom: 7px;
+      color: #959e97;
+      font-size: 10px;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .course-main h2 {
+      margin: 0;
+      color: #3c473f;
+      font: 600 28px/1.4 "Songti SC", "STSong", "Noto Serif SC", serif;
+    }
+
+    .course-main p {
+      margin: 9px 0 0;
+      color: #939c95;
+      font-size: 11px;
+    }
+
+    .video {
+      display: grid;
+      place-items: center;
+      width: min(700px, 72vw);
+      height: 300px;
+      margin-top: 32px;
+      border: 1px solid rgba(70,83,74,.12);
+      background: #2c332f;
+      box-shadow: 0 18px 50px rgba(40, 50, 44, .08);
+    }
+
+    .video-play {
+      display: grid;
+      place-items: center;
+      width: 50px;
+      height: 50px;
+      border: 1px solid rgba(255,255,255,.36);
+      border-radius: 50%;
+      color: #dce4dc;
+    }
+
+    .mini {
+      position: fixed;
+      right: 28px;
+      bottom: 24px;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      width: 50px;
+      height: 50px;
+      border: 1px solid rgba(79,111,95,.2);
+      border-radius: 50%;
+      background: rgba(255,253,248,.94);
+      box-shadow: 0 12px 30px rgba(40,50,44,.16);
+      backdrop-filter: blur(12px);
+    }
+
+    .mini .badge {
+      position: absolute;
+      top: 5px;
+      right: 4px;
+      display: grid;
+      place-items: center;
+      min-width: 15px;
+      height: 15px;
+      padding: 0 4px;
+      border: 2px solid #fffdf8;
+      border-radius: 999px;
+      background: var(--amber);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .mini .dot {
+      position: absolute;
+      left: 8px;
+      bottom: 9px;
+      width: 7px;
+      height: 7px;
+      border: 1.5px solid #fffdf8;
+      border-radius: 50%;
+      background: var(--sage);
+    }
+
+    .panel {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      bottom: 16px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      width: 440px;
+      max-width: calc(100vw - 32px);
+      overflow: hidden;
+      border: 1px solid rgba(70,83,74,.16);
+      border-radius: 12px;
+      background: rgba(249,247,242,.94);
+      box-shadow: 0 26px 72px rgba(40,50,44,.22);
+      backdrop-filter: blur(22px) saturate(.92);
+      transition: transform .22s ease, opacity .22s ease;
+    }
+
+    .panel.closed {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(22px);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 64px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(79,111,95,.18);
+      border-radius: 8px;
+      background: var(--sage-soft);
+      color: var(--sage-deep);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    .brand h3 { margin: 0; color: #354039; font-size: 13px; font-weight: 600; }
+    .brand p { margin: 1px 0 0; color: var(--muted); font-size: 10px; }
+
+    .head-actions { display: flex; align-items: center; gap: 5px; }
+
+    .state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 23px;
+      padding: 0 8px;
+      border: 1px solid rgba(120,152,136,.25);
+      border-radius: 999px;
+      background: rgba(231,238,232,.8);
+      color: var(--sage-deep);
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .state-pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      color: #7b857e;
+    }
+
+    .icon-btn:hover { background: rgba(120,152,136,.12); color: var(--ink); }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      margin: 10px 18px 0;
+      padding: 3px;
+      border: 1px solid var(--line-soft);
+      border-radius: 7px;
+      background: rgba(255,255,255,.4);
+    }
+
+    .tabs button {
+      height: 28px;
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tabs button.active { background: var(--surface); color: var(--sage-deep); box-shadow: 0 1px 3px rgba(40,50,44,.08); }
+
+    .view {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 16px 18px 20px;
+      scrollbar-width: thin;
+      scrollbar-color: #ced7d0 transparent;
+    }
+
+    .view::-webkit-scrollbar { width: 6px; }
+    .view::-webkit-scrollbar-thumb { background: #ced7d0; border-radius: 99px; }
+
+    .view[hidden] { display: none; }
+
+    .eyebrow { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+
+    .hero-title {
+      margin: 6px 0 0;
+      color: #354039;
+      font: 600 18px/1.45 "Songti SC", "STSong", "Noto Serif SC", serif;
+    }
+
+    .hero-sub { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .progress-line { display: flex; align-items: center; gap: 9px; margin-top: 14px; }
+    .progress { flex: 1; height: 4px; overflow: hidden; border-radius: 99px; background: rgba(120,152,136,.16); }
+    .progress span { display: block; height: 100%; border-radius: inherit; background: var(--sage); }
+    .progress-line strong { color: var(--sage-deep); font-size: 10px; }
+
+    .meta-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 14px;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .meta-strip div { padding: 9px 0; }
+    .meta-strip div + div { padding-left: 12px; border-left: 1px solid var(--line-soft); }
+    .meta-strip span, .meta-strip strong { display: block; }
+    .meta-strip span { color: var(--muted); font-size: 9px; }
+    .meta-strip strong { margin-top: 2px; color: #465249; font-size: 11px; font-weight: 600; }
+
+    .section { padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+    .section:last-child { border-bottom: 0; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .section-head h4 { margin: 0; color: #3c483f; font-size: 11px; font-weight: 600; }
+    .section-head .hint { color: var(--muted); font-size: 9px; }
+
+    .task-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+    .play-btn { display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid rgba(79,111,95,.2); border-radius: 50%; background: var(--sage-soft); color: var(--sage-deep); }
+    .task-copy { display: grid; gap: 1px; min-width: 0; }
+    .task-copy strong { color: #3c483f; font-size: 11px; }
+    .task-copy span { color: var(--muted); font-size: 9px; }
+    .task-actions { margin-left: auto; display: flex; gap: 4px; }
+    .task-actions button { width: 24px; height: 24px; border-radius: 5px; color: var(--muted); }
+    .task-actions button:hover { background: var(--sage-soft); color: var(--sage-deep); }
+
+    .speed-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 10px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 6px; background: rgba(255,255,255,.36); }
+    .speed-row button { height: 24px; border-radius: 4px; color: var(--muted); font-size: 9px; font-weight: 600; }
+    .speed-row button.active { background: var(--sage-soft); color: var(--sage-deep); }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; }
+    .toggle-row + .toggle-row { padding-top: 7px; }
+    .toggle-copy strong { display: block; color: #4b584f; font-size: 10px; font-weight: 500; }
+    .toggle-copy span { display: block; margin-top: 1px; color: var(--muted); font-size: 9px; }
+    .switch { position: relative; flex: 0 0 auto; width: 30px; height: 17px; border-radius: 999px; background: #d6ddd7; transition: background .18s ease; }
+    .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(40,50,44,.15); transition: transform .18s ease; }
+    .switch.on { background: var(--sage); }
+    .switch.on::after { transform: translateX(13px); }
+
+    .timeline { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+    .timeline li { position: relative; display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px; min-height: 36px; color: #7e897f; font-size: 10px; }
+    .timeline li:not(:last-child)::after { content: ""; position: absolute; top: 24px; bottom: -7px; left: 8px; width: 1px; background: rgba(79,111,95,.15); }
+    .node { display: grid; place-items: center; width: 17px; height: 17px; border: 1px solid #cfd8d0; border-radius: 50%; background: var(--paper); color: #9ba59d; font-size: 8px; }
+    .timeline li.done .node { border-color: rgba(120,152,136,.34); background: var(--sage-soft); color: var(--sage-deep); }
+    .timeline li.active { color: #354039; font-weight: 600; }
+    .timeline li.active .node { border-color: var(--sage); background: var(--sage); color: #fff; box-shadow: 0 0 0 3px rgba(120,152,136,.12); }
+    .timeline li.blocked .state { color: var(--amber); }
+    .timeline .state { color: #9ba59d; font-size: 9px; font-weight: 400; }
+
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px 9px;
+      border-left: 2px solid rgba(177,132,84,.5);
+      background: rgba(177,132,84,.07);
+      color: #8d6d49;
+      font-size: 9px;
+      line-height: 1.55;
+    }
+
+    .log-box { overflow: hidden; border: 1px solid rgba(70,83,74,.1); border-radius: 6px; background: #2c352f; color: #c3ccc6; font: 9px/1.8 var(--mono); }
+    .log-line { display: grid; grid-template-columns: 56px 33px 1fr; gap: 6px; padding: 3px 8px; white-space: nowrap; }
+    .log-line time { color: #7d8a81; }
+    .log-line .tag { color: #a5c0ae; }
+    .log-line.warn .tag { color: #d1a171; }
+    .log-line.ok .tag { color: #92c8aa; }
+
+    .quiz-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .mode-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--sage-deep); font-size: 9px; }
+    .mode-toggle .switch { width: 27px; height: 15px; }
+    .mode-toggle .switch::after { width: 11px; height: 11px; }
+    .mode-toggle .switch.on::after { transform: translateX(12px); }
+
+    .question { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+    .question-meta { color: var(--muted); font-size: 9px; }
+    .question-title { margin-top: 4px; color: #39463e; font-size: 11px; font-weight: 600; line-height: 1.55; }
+    .answer { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--sage-deep); font-size: 10px; font-weight: 600; }
+    .answer em { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--sage-soft); font-size: 8px; font-style: normal; }
+    .question-foot { margin-top: 6px; color: #9aa49d; font-size: 9px; }
+    .question-actions { display: flex; gap: 11px; margin-top: 8px; }
+    .text-action { padding: 0; color: var(--sage-deep); font-size: 9px; text-decoration: underline; text-underline-offset: 2px; }
+
+    .record-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line-soft); color: var(--muted); font-size: 9px; }
+    .record-row button { color: var(--sage-deep); font-size: 9px; }
+
+    .settings-title { margin: 0 0 12px; color: #354039; font: 600 16px/1.4 "Songti SC", "STSong", "Noto Serif SC", serif; }
+    .field { display: grid; gap: 5px; margin-bottom: 13px; }
+    .field label { color: #58655c; font-size: 9px; font-weight: 600; }
+    .field input, .field select { width: 100%; height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 5px; outline: none; background: rgba(255,255,255,.56); color: #3c483f; font-size: 10px; }
+    .field input:focus, .field select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(120,152,136,.1); }
+    .field small { color: #98a29b; font-size: 8px; }
+
+    .advanced { margin-top: 12px; border-top: 1px solid var(--line-soft); }
+    .advanced summary { padding: 10px 0 6px; color: var(--muted); font-size: 9px; cursor: pointer; list-style: none; }
+    .advanced summary::-webkit-details-marker { display: none; }
+    .advanced summary::before { content: "+ "; color: var(--sage-deep); }
+    .advanced[open] summary::before { content: "− "; }
+    .advanced .field { margin-top: 9px; }
+
+    .save-btn { width: 100%; height: 34px; margin-top: 8px; border-radius: 5px; background: var(--sage); color: #fff; font-size: 10px; font-weight: 600; }
+
+    .ai-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      background: rgba(249,247,242,.99);
+      transform: translateY(100%);
+      transition: transform .22s ease;
+    }
+
+    .ai-layer.open { transform: translateY(0); }
+    .ai-head { display: flex; align-items: center; gap: 9px; min-height: 58px; padding: 0 16px; border-bottom: 1px solid var(--line-soft); }
+    .ai-head strong { color: #354039; font-size: 12px; }
+    .ai-head span { color: var(--muted); font-size: 9px; }
+    .ai-body { flex: 1; overflow: auto; padding: 16px; }
+    .ai-msg { max-width: 90%; margin-bottom: 10px; padding: 9px 10px; border: 1px solid var(--line-soft); border-radius: 7px; background: var(--surface); color: #4d5a51; font-size: 10px; line-height: 1.6; }
+    .ai-msg.user { margin-left: auto; background: var(--sage-soft); color: #415047; }
+    .ai-input { display: flex; gap: 7px; padding: 10px 14px 14px; border-top: 1px solid var(--line-soft); }
+    .ai-input input { flex: 1; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; outline: none; background: var(--surface); font-size: 10px; }
+    .ai-input button { width: 36px; border-radius: 6px; background: var(--sage); color: #fff; }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 46px;
+      padding: 0 14px;
+      border-top: 1px solid var(--line-soft);
+      background: rgba(249,247,242,.9);
+    }
+
+    .footer-note { color: var(--muted); font-size: 9px; }
+    .footer button { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 9px; }
+    .footer button:hover { color: var(--sage-deep); }
+
+    .icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+    @media (max-width: 760px) {
+      .course-page { grid-template-columns: 1fr; }
+      .course-side { display: none; }
+      .course-main { padding: 36px 20px; }
+      .course-main h2 { font-size: 22px; }
+      .video { width: 100%; height: 230px; }
+      .panel { top: 8px; right: 8px; bottom: 8px; width: calc(100vw - 16px); }
+      .mini { right: 16px; bottom: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="course-page" aria-hidden="true">
+      <aside class="course-side">
+        <div class="course-brand"><span>ABC</span>学习空间</div>
+        <h1>毛泽东思想和中国特色社会主义理论体系概论</h1>
+        <ul class="chapters">
+          <li>马克思主义中国化</li>
+          <li>新民主主义革命理论</li>
+          <li class="active">思想路线的形成与发展</li>
+          <li>社会主义建设道路</li>
+          <li>邓小平理论</li>
+        </ul>
+      </aside>
+      <main class="course-main">
+        <div class="course-kicker">第 3 章 / 视频任务点</div>
+        <h2>实事求是思想路线的确立与检验</h2>
+        <p>学习通原生播放器运行中 · ABC 学习助手已接管学习流程</p>
+        <div class="video">
+          <div class="video-play"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+        </div>
+      </main>
+    </div>
+
+    <button class="mini" id="mini" aria-label="展开学习助手">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(120,152,136,.18)" stroke-width="2.4"/>
+        <circle cx="14" cy="14" r="10" fill="none" stroke="#789888" stroke-width="2.4" stroke-dasharray="53.4 62.8" stroke-linecap="round" transform="rotate(-90 14 14)"/>
+        <circle cx="14" cy="14" r="3" fill="#4f6f5f"/>
+      </svg>
+      <span class="dot"></span>
+      <span class="badge">1</span>
+    </button>
+
+    <aside class="panel" id="panel" aria-label="ABC 学习助手">
+      <header class="panel-head">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div>
+            <h3>学习助手</h3>
+            <p>超星 · 本地运行</p>
+          </div>
+        </div>
+        <div class="head-actions">
+          <span class="state-pill">运行中</span>
+          <button class="icon-btn" id="aiBtn" aria-label="打开 AI 对话">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg>
+          </button>
+          <button class="icon-btn" id="collapse" aria-label="收起面板">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="主功能">
+        <button class="active" data-tab="status" role="tab">状态</button>
+        <button data-tab="quiz" role="tab">答题</button>
+        <button data-tab="settings" role="tab">设置</button>
+      </div>
+
+      <div class="view" id="viewStatus">
+        <div class="eyebrow">当前章节</div>
+        <h2 class="hero-title">实事求是思想路线的确立与检验</h2>
+        <div class="hero-sub">视频任务点 · 第 3 章 · 自动巡航</div>
+        <div class="progress-line"><div class="progress"><span style="width:85%"></span></div><strong>85%</strong></div>
+        <div class="meta-strip">
+          <div><span>已播放</span><strong>12:18 / 14:30</strong></div>
+          <div><span>当前倍速</span><strong>1.5x</strong></div>
+          <div><span>任务点</span><strong>2 / 4</strong></div>
+        </div>
+
+        <section class="section">
+          <div class="section-head"><h4>当前任务</h4><span class="hint">自动接管</span></div>
+          <div class="task-row">
+            <button class="play-btn" aria-label="暂停"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg></button>
+            <div class="task-copy"><strong>视频播放中</strong><span>12:18 / 14:30 · 静音 · 心跳正常</span></div>
+            <div class="task-actions">
+              <button aria-label="重试"><svg class="icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v6h-6"/></svg></button>
+              <button aria-label="更多"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+            </div>
+          </div>
+          <div class="speed-row" id="speedRow">
+            <button>1.0x</button><button>1.25x</button><button class="active">1.5x</button><button>2.0x</button>
+          </div>
+          <div class="toggle-row"><div class="toggle-copy"><strong>自动下一节</strong><span>完成后按顺序继续</span></div><button class="switch on" data-switch aria-label="自动下一节"></button></div>
+          <div class="toggle-row"><div class="toggle-copy"><strong>防卡死心跳</strong><span>播放器停住时自动恢复</span></div><button class="switch on" data-switch aria-label="防卡死心跳"></button></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head"><h4>任务进度</h4><span class="hint">2 / 4</span></div>
+          <ol class="timeline">
+            <li class="done"><span class="node">1</span><span>导读文档</span><span class="state">完成</span></li>
+            <li class="active"><span class="node">2</span><span>视频播放</span><span class="state">85%</span></li>
+            <li class="blocked"><span class="node">3</span><span>章节测验</span><span class="state">待处理</span></li>
+            <li><span class="node">4</span><span>自动交卷</span><span class="state">未开始</span></li>
+          </ol>
+          <div class="alert">平台提示当前章节还有任务点未完成，脚本会自动进入「去学习」并继续处理。</div>
+        </section>
+
+        <section class="section">
+          <div class="section-head"><h4>最近日志</h4><button class="text-action" id="clearLog">清空</button></div>
+          <div class="log-box" id="logBox">
+            <div class="log-line"><time>10:24:18</time><span class="tag">题库</span><span>命中 3 道题，等待自动填入</span></div>
+            <div class="log-line ok"><time>10:24:22</time><span class="tag">AI</span><span>补漏完成，置信度 99.4%</span></div>
+            <div class="log-line warn"><time>10:24:25</time><span class="tag">视频</span><span>检测到暂停，已恢复播放</span></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="view" id="viewQuiz" hidden>
+        <div class="quiz-head">
+          <div><div class="eyebrow">章节测验</div><h2 class="hero-title" style="font-size:16px">党的思想路线的实质和核心是？</h2></div>
+          <label class="mode-toggle"><span>只答题</span><button class="switch on" data-switch aria-label="只答题模式"></button></label>
+        </div>
+        <div class="question">
+          <div class="question-meta">单选题 · 第 4 题 · 自动填入</div>
+          <div class="question-title">党的思想路线的实质和核心是？</div>
+          <div class="answer"><em>答案</em><span>B. 实事求是</span></div>
+          <div class="question-foot">模型返回 · 置信度 99% · 已按阈值提交</div>
+          <div class="question-actions"><button class="text-action">查看解析</button><button class="text-action">下一题</button><button class="text-action">暂停答题</button></div>
+        </div>
+        <div class="record-row"><span>已答 9 / 10 · 正确率 90%</span><button>答题记录</button></div>
+      </div>
+
+      <div class="view" id="viewSettings" hidden>
+        <h2 class="settings-title">设置</h2>
+        <div class="field"><label>API 地址</label><input value="https://ark.cn-beijing.volces.com/api/v3"><small>兼容 OpenAI Chat Completions</small></div>
+        <div class="field"><label>API 密钥</label><input type="password" value="sk-xxxxxxxxxxxx"></div>
+        <div class="field"><label>模型名</label><input value="deepseek-v4.1-flash"></div>
+        <div class="field"><label>视频倍速</label><select><option>1.0x</option><option>1.25x</option><option selected>1.5x</option><option>2.0x</option></select></div>
+        <div class="field"><label>自动提交阈值</label><input value="85%"></div>
+        <details class="advanced">
+          <summary>高级设置</summary>
+          <div class="field"><label>请求间隔</label><input value="2.5 秒"></div>
+          <div class="field"><label>日志保留</label><select><option>最近 3 条</option><option>最近 10 条</option><option>全部</option></select></div>
+          <div class="toggle-row"><div class="toggle-copy"><strong>自动交卷</strong><span>达到阈值后提交</span></div><button class="switch on" data-switch aria-label="自动交卷"></button></div>
+        </details>
+        <button class="save-btn" id="saveSettings">保存生效</button>
+      </div>
+
+      <footer class="footer">
+        <span class="footer-note">本地运行 · 单个 API</span>
+        <button id="openSettings"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.7-1.7.1-.1A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.6-1H6.6v-2.4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.7-1.7.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2V14h-.2a1.7 1.7 0 0 0-1.6 1z"/></svg>设置</button>
+      </footer>
+
+      <div class="ai-layer" id="aiLayer">
+        <div class="ai-head">
+          <button class="icon-btn" id="closeAi" aria-label="返回"><svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div><strong>AI 对话</strong><span>与答题共用同一 API</span></div>
+        </div>
+        <div class="ai-body">
+          <div class="ai-msg user">这道题为什么选 B？</div>
+          <div class="ai-msg">“实事求是”是党的思想路线的核心，也是马克思主义中国化理论成果的精髓。选项 A 只描述了局部方法，C、D 与题干不符。</div>
+        </div>
+        <div class="ai-input"><input placeholder="问点什么…"><button aria-label="发送">→</button></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const panel = document.getElementById('panel');
+    const mini = document.getElementById('mini');
+    const collapse = document.getElementById('collapse');
+    const tabs = document.querySelectorAll('[data-tab]');
+    const views = {
+      status: document.getElementById('viewStatus'),
+      quiz: document.getElementById('viewQuiz'),
+      settings: document.getElementById('viewSettings')
+    };
+    const speedRow = document.getElementById('speedRow');
+    const logBox = document.getElementById('logBox');
+    const aiLayer = document.getElementById('aiLayer');
+
+    mini.addEventListener('click', () => {
+      panel.classList.remove('closed');
+      mini.style.display = 'none';
+    });
+    collapse.addEventListener('click', () => {
+      panel.classList.add('closed');
+      mini.style.display = 'grid';
+    });
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.classList.remove('active'));
+        tab.classList.add('active');
+        Object.entries(views).forEach(([key, view]) => { view.hidden = key !== tab.dataset.tab; });
+      });
+    });
+
+    speedRow.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      speedRow.querySelectorAll('button').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+    });
+
+    document.querySelectorAll('[data-switch]').forEach((button) => {
+      button.addEventListener('click', () => button.classList.toggle('on'));
+    });
+
+    document.getElementById('clearLog').addEventListener('click', () => {
+      logBox.innerHTML = '<div class="log-line ok"><time>--:--:--</time><span class="tag">系统</span><span>日志已清空</span></div>';
+    });
+
+    document.getElementById('aiBtn').addEventListener('click', () => aiLayer.classList.add('open'));
+    document.getElementById('closeAi').addEventListener('click', () => aiLayer.classList.remove('open'));
+    document.getElementById('openSettings').addEventListener('click', () => {
+      tabs.forEach((item) => item.classList.toggle('active', item.dataset.tab === 'settings'));
+      Object.entries(views).forEach(([key, view]) => { view.hidden = key !== 'settings'; });
+    });
+    document.getElementById('saveSettings').addEventListener('click', () => {
+      logBox.insertAdjacentHTML('afterbegin', '<div class="log-line ok"><time>10:25:04</time><span class="tag">设置</span><span>配置已保存，下一轮生效</span></div>');
+      tabs.forEach((item) => item.classList.toggle('active', item.dataset.tab === 'status'));
+      Object.entries(views).forEach(([key, view]) => { view.hidden = key !== 'status'; });
+    });
+  </script>
+</body>
+</html>

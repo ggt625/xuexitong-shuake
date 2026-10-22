@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC网课助手 · UI重构样品 3 - 灵动卡片岛与时间轴流 (Dynamic Island & Activity Feed)</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg-canvas: #090b10;
+      --bg-drawer: rgba(15, 18, 28, 0.92);
+      --bg-card: rgba(26, 31, 48, 0.65);
+      --bg-island: rgba(10, 13, 20, 0.95);
+      --border-glass: rgba(255, 255, 255, 0.09);
+      --border-glow: rgba(139, 92, 246, 0.35);
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-pink: #ec4899;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --text-white: #f8fafc;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --drawer-width: 440px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #0f172a;
+      color: #334155;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      user-select: none;
+    }
+
+    /* ========================================================
+       1. 模拟在线课堂作业平台背景 (Modern Course & Quiz Canvas)
+       ======================================================== */
+    .mock-page {
+      position: absolute;
+      inset: 0;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .portal-nav {
+      height: 56px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+    .portal-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .portal-brand-tag {
+      background: #e0e7ff;
+      color: #4338ca;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .portal-body {
+      flex: 1;
+      display: flex;
+      padding: 24px;
+      gap: 24px;
+      overflow: hidden;
+    }
+    .quiz-paper-area {
+      flex: 1;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      padding: 30px 40px;
+      overflow-y: auto;
+    }
+    .quiz-paper-header {
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .quiz-paper-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    .quiz-paper-meta {
+      font-size: 13px;
+      color: #64748b;
+      display: flex;
+      gap: 16px;
+    }
+    .mock-q-item {
+      margin-bottom: 28px;
+    }
+    .mock-q-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .mock-options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mock-opt {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;
+      color: #475569;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mock-opt.auto-picked {
+      border-color: #8b5cf6;
+      background: #f5f3ff;
+      color: #6d28d9;
+      font-weight: 600;
+    }
+
+    /* ========================================================
+       2. 悬浮灵动胶囊气泡 (Floating Dynamic Island Capsule)
+       ======================================================== */
+    .dynamic-bubble-capsule {
+      position: fixed;
+      right: 32px;
+      bottom: 48px;
+      z-index: 9999;
+      background: rgba(15, 18, 28, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(139, 92, 246, 0.25);
+      border-radius: 40px;
+      padding: 6px 14px 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dynamic-bubble-capsule:hover {
+      transform: scale(1.05) translateY(-3px);
+      border-color: var(--accent-purple);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(139, 92, 246, 0.4);
+    }
+    .dynamic-bubble-capsule.hidden {
+      transform: scale(0.6) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .capsule-ring-svg {
+      width: 32px;
+      height: 32px;
+      transform: rotate(-90deg);
+    }
+    .ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 3;
+    }
+    .ring-val {
+      fill: none;
+      stroke: var(--accent-purple);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 88;
+      stroke-dashoffset: 15; /* ~85% */
+      transition: stroke-dashoffset 0.5s;
+    }
+    .capsule-body-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .capsule-main-line {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .capsule-sub-line {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* ========================================================
+       3. 灵动流体抽屉 (Fluid Drawer: 440px)
+       ======================================================== */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .drawer-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .island-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: var(--drawer-width);
+      max-width: 100vw;
+      background: var(--bg-drawer);
+      backdrop-filter: blur(28px);
+      border-left: 1px solid var(--border-glass);
+      box-shadow: -15px 0 50px rgba(0, 0, 0, 0.7);
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(105%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .island-drawer.active {
+      transform: translateX(0);
+    }
+
+    /* ========================================================
+       4. 抽屉区域结构：非传统Tab，采用灵动岛 + 决策时间轴
+       ======================================================== */
+
+    /* 4.1 顶部灵动主控制岛 (Dynamic Island Widget) */
+    .dynamic-island-header {
+      padding: 16px 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .island-pill-box {
+      background: var(--bg-island);
+      border: 1px solid var(--border-glow);
+      border-radius: 24px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .island-left-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .island-glow-gem {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #a855f7 0%, #6366f1 100%);
+      box-shadow: 0 0 12px #a855f7;
+    }
+    .island-headline {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .island-subhead {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .island-ctrls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .island-pill-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .island-pill-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--accent-purple);
+    }
+    .btn-close-island {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-close-island:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* 4.2 浮动即时查题条 (Floating Rapid Query Bar) */
+    .island-search-strip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .island-search-strip:focus-within {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+    }
+    .island-search-strip svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-muted);
+      fill: none;
+      stroke-width: 2;
+    }
+    .island-search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    /* 4.3 核心决策时间轴流 (Live Decision Timeline Feed) */
+    .timeline-feed-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 18px 80px; /* 留出底部 Dock 空间 */
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+      position: relative;
+    }
+    .timeline-feed-wrap::-webkit-scrollbar {
+      width: 4px;
+    }
+    .timeline-feed-wrap::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    /* 时间轴事件卡片 */
+    .timeline-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .timeline-card:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-1px);
+    }
+    .tl-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .tl-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tl-badge.purple { background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .tl-badge.emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tl-badge.cyan { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .tl-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+    .tl-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.4;
+    }
+    .tl-content-block {
+      background: rgba(10, 13, 20, 0.6);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    /* AI 交互卡专属样式 */
+    .ai-action-btn-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .ai-btn-sm {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #d8b4fe;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ai-btn-sm:hover {
+      background: rgba(139, 92, 246, 0.35);
+      color: #fff;
+    }
+
+    /* 4.4 悬浮毛玻璃底座 Dock (Floating Glass Dock) */
+    .floating-glass-dock {
+      position: absolute;
+      bottom: 14px;
+      left: 18px;
+      right: 18px;
+      height: 48px;
+      background: rgba(15, 20, 32, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glow);
+      border-radius: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      z-index: 30;
+    }
+    .dock-pill-action {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      border-radius: 14px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dock-pill-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .dock-pill-action.active {
+      background: rgba(139, 92, 246, 0.2);
+      color: var(--accent-purple);
+    }
+    .dock-pill-action svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* 4.5 弹层抽屉微件 (Log & Settings Slide-ups) */
+    .dock-overlay-modal {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(13, 17, 27, 0.96);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-glow);
+      border-radius: 20px 20px 0 0;
+      max-height: 380px;
+      display: flex;
+      flex-direction: column;
+      z-index: 40;
+      transform: translateY(105%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 16px;
+    }
+    .dock-overlay-modal.active {
+      transform: translateY(0);
+    }
+    .modal-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .modal-body-scroll {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 12px;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .overlay-setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+    }
+    .modal-term-box {
+      background: #080b12;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px;
+      height: 220px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    /* Toast */
+    .island-toast {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: var(--accent-purple);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 20px;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.5);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .island-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 模拟在线课堂作业与考试主背景 -->
+  <div class="mock-page">
+    <div class="portal-nav">
+      <div class="portal-brand">
+        <span>ABC网课助手 · 测试沙盒</span>
+        <span class="portal-brand-tag">期末在线自测</span>
+      </div>
+      <div style="font-size: 13px; color:#64748b;">
+        考生：李同学 | 剩余答题时间：45分20秒
+      </div>
+    </div>
+
+    <div class="portal-body">
+      <div class="quiz-paper-area">
+        <div class="quiz-paper-header">
+          <div class="quiz-paper-title">毛泽东思想和中国特色社会主义理论体系概论 · 单元测试</div>
+          <div class="quiz-paper-meta">
+            <span>题量：20题</span>
+            <span>总分：100分</span>
+            <span>ABC助手状态：全自动托管中</span>
+          </div>
+        </div>
+
+        <div class="mock-q-item">
+          <div class="mock-q-text">1. 党的思想路线的实质和核心是？</div>
+          <div class="mock-options-group">
+            <div class="mock-opt">A. 一切从实际出发</div>
+            <div class="mock-opt auto-picked">B. 实事求是 (ABC已命中并勾选)</div>
+            <div class="mock-opt">C. 理论联系实际</div>
+            <div class="mock-opt">D. 在实践中检验真理和发展真理</div>
+          </div>
+        </div>
+
+        <div class="mock-q-item">
+          <div class="mock-q-text">2. 中国共产党区别于其他政党的显著标志是？</div>
+          <div class="mock-options-group">
+            <div class="mock-opt auto-picked">A. 理论联系实际、密切联系群众、批评与自我批评 (ABC已命中并勾选)</div>
+            <div class="mock-opt">B. 坚持党的领导、人民当家作主、依法治国</div>
+            <div class="mock-opt">C. 武装斗争、土地革命、根据地建设</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 悬浮灵动胶囊气泡 (Floating Dynamic Island Capsule) -->
+  <div class="dynamic-bubble-capsule" id="dynamicBubble" onclick="toggleIslandDrawer(true)">
+    <svg class="capsule-ring-svg" viewBox="0 0 32 32">
+      <circle class="ring-bg" cx="16" cy="16" r="14"></circle>
+      <circle class="ring-val" id="capsuleRingVal" cx="16" cy="16" r="14"></circle>
+    </svg>
+    <div class="capsule-body-text">
+      <div class="capsule-main-line">
+        <span>ABC 巡航中</span>
+        <span style="font-size:10px; color:#c084fc;">1.5x</span>
+      </div>
+      <div class="capsule-sub-line" id="capsuleSubText">进度 85% · 题库匹配正常</div>
+    </div>
+  </div>
+
+  <!-- 3. 背景遮罩 -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="toggleIslandDrawer(false)"></div>
+
+  <!-- 4. 灵动流体抽屉 (440px) -->
+  <div class="island-drawer" id="islandDrawer">
+    <!-- Toast -->
+    <div class="island-toast" id="islandToast">已保存</div>
+
+    <!-- 顶部灵动控制岛 (Dynamic Island Widget) -->
+    <div class="dynamic-island-header">
+      <div class="island-pill-box">
+        <div class="island-left-meta">
+          <div class="island-glow-gem"></div>
+          <div>
+            <div class="island-headline">
+              毛概体系概论 <span style="font-size:10px; color:var(--accent-purple); font-weight:700;">PRO</span>
+            </div>
+            <div class="island-subhead" id="islandSubStatus">极速巡航模式 · 视频 85%</div>
+          </div>
+        </div>
+
+        <div class="island-ctrls">
+          <button class="island-pill-btn" onclick="quickSpeedCycle(this)">1.5x ⚡</button>
+          <button class="island-pill-btn" id="islandPauseBtn" onclick="toggleIslandPause()">暂停</button>
+          <button class="btn-close-island" onclick="toggleIslandDrawer(false)">✕</button>
+        </div>
+      </div>
+
+      <!-- 快速查题条 -->
+      <div class="island-search-strip">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="island-search-input" id="quickQueryInput" placeholder="在此快速输入题目或关键词..." onkeydown="handleQueryEnter(event)">
+      </div>
+    </div>
+
+    <!-- 核心决策时间轴流 (Live Decision Timeline Feed) -->
+    <div class="timeline-feed-wrap" id="feedContainer">
+
+      <!-- 节点 1: 视频完成事件 -->
+      <div class="timeline-card">
+        <div class="tl-card-top">
+          <span class="tl-badge emerald">✓ 视频已通关</span>
+          <span class="tl-time">10:40:15</span>
+        </div>
+        <div class="tl-title">《3.1 思想路线的初步探索》</div>
+        <div class="tl-content-block">
+          累计播放时长 18分30秒，学习通任务点已同步打卡成功。
+        </div>
+      </div>
+
+      <!-- 节点 2: 加密字体解密 -->
+      <div class="timeline-card">
+        <div class="tl-card-top">
+          <span class="tl-badge cyan">🔠 字体解密防御</span>
+          <span class="tl-time">10:41:02</span>
+        </div>
+        <div class="tl-title">超星混淆字体实时动态映射</div>
+        <div class="tl-content-block">
+          拦截到 64 个混淆字形，字体哈希映射库已成功还原，保障搜题原题语义无误。
+        </div>
+      </div>
+
+      <!-- 节点 3: 题库命中节点 -->
+      <div class="timeline-card">
+        <div class="tl-card-top">
+          <span class="tl-badge purple">🏛️ 题库秒级命中</span>
+          <span class="tl-time">10:41:18</span>
+        </div>
+        <div class="tl-title">题目：党的思想路线的实质和核心是？</div>
+        <div class="tl-content-block">
+          匹配答案：<strong style="color:#c084fc;">[B] 实事求是</strong><br>
+          来源：ABC 官方高频试题云库 (置信度 100%)
+        </div>
+      </div>
+
+      <!-- 节点 4: AI 决策实时交互卡 -->
+      <div class="timeline-card" id="aiDecisionCard">
+        <div class="tl-card-top">
+          <span class="tl-badge purple">🤖 DeepSeek 决策卡</span>
+          <span class="tl-time">10:41:30</span>
+        </div>
+        <div class="tl-title">简答：试论实事求是思想路线的新时代要求</div>
+        <div class="tl-content-block" id="aiStreamArea">
+          <strong>AI 推导分析：</strong><br>
+          1. 坚持把马克思主义基本原理同中国具体实际相结合；<br>
+          2. 保持战略定力，增强改革创新的主动性。<br>
+          <em style="color:#34d399; font-style:normal;">已生成结构化学术答案 (420字)</em>
+        </div>
+        <div class="ai-action-btn-row">
+          <button class="ai-btn-sm" onclick="adoptAiAnswer()">✓ 采纳填入</button>
+          <button class="ai-btn-sm" onclick="regenerateAi()">↺ 重新生成</button>
+        </div>
+      </div>
+
+      <!-- 节点 5: 自动提交预警 -->
+      <div class="timeline-card">
+        <div class="tl-card-top">
+          <span class="tl-badge emerald">🚀 自动提交就绪</span>
+          <span class="tl-time">10:41:45</span>
+        </div>
+        <div class="tl-title">章节自测及格率核验通过</div>
+        <div class="tl-content-block">
+          当前正确率预估：<strong>95%</strong>（设定的提交阈值为 80%），无需人工介入。
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部悬浮毛玻璃 Dock (Floating Glass Dock) -->
+    <div class="floating-glass-dock">
+      <div class="dock-pill-action" onclick="toggleOverlayModal('logsModal')">
+        <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <span>日志</span>
+      </div>
+      <div class="dock-pill-action" onclick="triggerAskAi()">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>问AI</span>
+      </div>
+      <div class="dock-pill-action" onclick="toggleOverlayModal('settingsModal')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>偏好</span>
+      </div>
+    </div>
+
+    <!-- 弹层 1: 实时运行日志浮层 (Logs Modal) -->
+    <div class="dock-overlay-modal" id="logsModal">
+      <div class="modal-head-row">
+        <span>实时运行微终端</span>
+        <button class="btn-close-island" onclick="toggleOverlayModal('logsModal', false)">✕</button>
+      </div>
+      <div class="modal-term-box" id="islandLogBox">
+        <div>[10:40:15] <span style="color:#34d399;">[视频]</span> 任务点打卡通过，上报服务端 green 标记</div>
+        <div>[10:41:02] <span style="color:#67e8f9;">[字体]</span> 字体反混淆解密库已注入</div>
+        <div>[10:41:18] <span style="color:#c084fc;">[题库]</span> 题目精确匹配成功，耗时 120ms</div>
+        <div>[10:41:30] <span style="color:#f59e0b;">[AI]</span> 触发 DeepSeek 复杂主观题深度生成</div>
+      </div>
+    </div>
+
+    <!-- 弹层 2: 偏好配置浮层 (Settings Modal) -->
+    <div class="dock-overlay-modal" id="settingsModal">
+      <div class="modal-head-row">
+        <span>偏好与策略配置</span>
+        <button class="btn-close-island" onclick="toggleOverlayModal('settingsModal', false)">✕</button>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="overlay-setting-row">
+          <span>AI 补漏模型</span>
+          <select style="background:#1e293b; color:#fff; border:none; padding:4px 8px; border-radius:6px;">
+            <option>DeepSeek-V3</option>
+            <option>Qwen-Plus</option>
+            <option>GPT-4o mini</option>
+          </select>
+        </div>
+        <div class="overlay-setting-row">
+          <span>提交阈值控制</span>
+          <input type="text" value="80%" style="background:#1e293b; color:#fff; border:none; width:60px; text-align:center; padding:3px; border-radius:4px;">
+        </div>
+        <div class="overlay-setting-row">
+          <span>过人脸识别蜂鸣提醒</span>
+          <input type="checkbox" checked style="accent-color:var(--accent-purple);">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let isDrawerOpen = true;
+    let isPaused = false;
+    let currentSpeed = 1.5;
+
+    function toggleIslandDrawer(open) {
+      isDrawerOpen = open;
+      const drawer = document.getElementById('islandDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      const bubble = document.getElementById('dynamicBubble');
+
+      if (open) {
+        drawer.classList.add('active');
+        backdrop.classList.add('active');
+        bubble.classList.add('hidden');
+      } else {
+        drawer.classList.remove('active');
+        backdrop.classList.remove('active');
+        bubble.classList.remove('hidden');
+        closeAllModals();
+      }
+    }
+
+    function toggleIslandPause() {
+      isPaused = !isPaused;
+      const btn = document.getElementById('islandPauseBtn');
+      const sub = document.getElementById('islandSubStatus');
+      if (isPaused) {
+        btn.textContent = '继续';
+        btn.style.color = '#ef4444';
+        sub.textContent = '已挂起暂停 · 等待继续';
+        showToast('已暂停挂机');
+        addLogItem('[警告] 用户手动暂停了任务流');
+      } else {
+        btn.textContent = '暂停';
+        btn.style.color = '#fff';
+        sub.textContent = `极速巡航模式 · 视频 85% (${currentSpeed}x)`;
+        showToast('继续巡航刷课');
+        addLogItem('[巡航] 恢复全自动流水线');
+      }
+    }
+
+    function quickSpeedCycle(btn) {
+      if (currentSpeed === 1.5) currentSpeed = 2.0;
+      else if (currentSpeed === 2.0) currentSpeed = 1.0;
+      else currentSpeed = 1.5;
+
+      btn.textContent = `${currentSpeed}x ⚡`;
+      document.getElementById('islandSubStatus').textContent = `极速巡航模式 · 视频 85% (${currentSpeed}x)`;
+      showToast(`倍速调节为 ${currentSpeed}x`);
+      addLogItem(`[倍速] 切换至 ${currentSpeed}x`);
+    }
+
+    function handleQueryEnter(e) {
+      if (e.key === 'Enter') {
+        const val = document.getElementById('quickQueryInput').value.trim();
+        if (val) {
+          showToast(`已搜索: ${val}`);
+          addTimelineCard('🔍 查题命中', val, '匹配答案: [B] 实事求是 (自建库)');
+          document.getElementById('quickQueryInput').value = '';
+        }
+      }
+    }
+
+    function addTimelineCard(tag, title, content) {
+      const feed = document.getElementById('feedContainer');
+      const d = new Date();
+      const timeStr = [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+      const card = document.createElement('div');
+      card.className = 'timeline-card';
+      card.innerHTML = `
+        <div class="tl-card-top">
+          <span class="tl-badge purple">${tag}</span>
+          <span class="tl-time">${timeStr}</span>
+        </div>
+        <div class="tl-title">${title}</div>
+        <div class="tl-content-block">${content}</div>
+      `;
+      feed.insertBefore(card, feed.firstChild);
+    }
+
+    function adoptAiAnswer() {
+      showToast('AI 答案已采纳并回填试卷');
+      addLogItem('[AI] 用户采纳了主观题生成草稿');
+    }
+
+    function regenerateAi() {
+      const area = document.getElementById('aiStreamArea');
+      area.innerHTML = '<span style="color:#f59e0b;">[DeepSeek 重新推理中...]</span><br>正在重构论述逻辑与学术提炼...';
+      setTimeout(() => {
+        area.innerHTML = '<strong>全新润色答案：</strong><br>实事求是是毛泽东思想活的灵魂。在新时代必须紧密结合新质生产力与中国式现代化展开探索。<br><em style="color:#34d399; font-style:normal;">已优化完毕 (380字)</em>';
+        showToast('已生成新版本');
+      }, 600);
+    }
+
+    function triggerAskAi() {
+      showToast('已唤醒 AI 助手对话');
+      addTimelineCard('🤖 智能问答', '新提问对话', '请输入您对当前课程知识点的疑问，AI 将立即解析。');
+    }
+
+    function toggleOverlayModal(id, force) {
+      const modal = document.getElementById(id);
+      if (typeof force === 'boolean') {
+        if (force) modal.classList.add('active');
+        else modal.classList.remove('active');
+      } else {
+        const isActive = modal.classList.contains('active');
+        closeAllModals();
+        if (!isActive) modal.classList.add('active');
+      }
+    }
+
+    function closeAllModals() {
+      document.querySelectorAll('.dock-overlay-modal').forEach(m => m.classList.remove('active'));
+    }
+
+    function addLogItem(str) {
+      const box = document.getElementById('islandLogBox');
+      const d = new Date();
+      const timeStr = [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+      const line = document.createElement('div');
+      line.textContent = `[${timeStr}] ${str}`;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function showToast(text) {
+      const t = document.getElementById('islandToast');
+      t.textContent = text;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // 默认打开抽屉展示
+    toggleIslandDrawer(true);
+  </script>
+</body>
+</html>

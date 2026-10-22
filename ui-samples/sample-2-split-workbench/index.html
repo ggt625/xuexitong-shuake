@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC网课助手 · UI重构样品 2 - 双轨分舱工作台 (Split Workbench)</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg-surface: #0e131f;
+      --bg-rail: #070a12;
+      --bg-card: rgba(22, 30, 48, 0.75);
+      --bg-card-inner: rgba(13, 19, 32, 0.85);
+      --border-subtle: rgba(99, 126, 184, 0.2);
+      --border-accent: #3b82f6;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --accent-teal: #14b8a6;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-emerald: #10b981;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --drawer-width: 510px;
+      --rail-width: 52px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #0b0f19;
+      color: #334155;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      user-select: none;
+    }
+
+    /* ========================================================
+       1. 模拟智慧树 (ZhiHuiShu) 网课平台背景
+       ======================================================== */
+    .mock-page {
+      position: absolute;
+      inset: 0;
+      background: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .zhs-topbar {
+      height: 54px;
+      background: #1e293b;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 2px solid #3b82f6;
+    }
+    .zhs-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .zhs-badge {
+      background: #3b82f6;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .zhs-course-info {
+      font-size: 13px;
+      color: #94a3b8;
+      display: flex;
+      gap: 12px;
+    }
+    .zhs-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .zhs-lesson-tree {
+      width: 320px;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+    }
+    .zhs-tree-header {
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      border-bottom: 1px solid #f1f5f9;
+      color: #0f172a;
+    }
+    .zhs-tree-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
+    .zhs-node {
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .zhs-node.active {
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 600;
+      border-left: 3px solid #2563eb;
+    }
+    .zhs-center-view {
+      flex: 1;
+      padding: 24px;
+      background: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .zhs-video-wrapper {
+      background: #000;
+      border-radius: 10px;
+      height: 480px;
+      position: relative;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .zhs-player-center {
+      text-align: center;
+      color: #94a3b8;
+    }
+    .zhs-player-center h4 {
+      color: #fff;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .zhs-overlay-bubble-tag {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(16, 185, 129, 0.9);
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* ========================================================
+       2. 右侧边缘磁吸扁平胶囊 (Edge Magnetic Pill Trigger)
+       ======================================================== */
+    .edge-pill-trigger {
+      position: fixed;
+      right: 0;
+      top: 42%;
+      transform: translateY(-50%);
+      z-index: 9999;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--border-subtle);
+      border-right: none;
+      border-radius: 16px 0 0 16px;
+      padding: 10px 8px 10px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .edge-pill-trigger:hover {
+      padding-left: 18px;
+      background: linear-gradient(135deg, #2563eb, #1e293b);
+      box-shadow: -6px 0 24px rgba(37, 99, 235, 0.4);
+    }
+    .edge-pill-trigger.hidden {
+      transform: translateY(-50%) translateX(100%);
+      pointer-events: none;
+    }
+    .pill-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulseAnimation 2s infinite;
+    }
+    @keyframes pulseAnimation {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .pill-text {
+      color: #f1f5f9;
+      font-size: 12px;
+      font-weight: 700;
+      writing-mode: vertical-lr;
+      letter-spacing: 2px;
+    }
+    .pill-speed {
+      background: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* ========================================================
+       3. 双轨分舱抽屉容器 (Split Workbench Drawer - 510px)
+       ======================================================== */
+    .drawer-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .drawer-scrim.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .split-workbench {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: var(--drawer-width);
+      max-width: 100vw;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -16px 0 45px rgba(0, 0, 0, 0.7);
+      z-index: 10001;
+      display: flex;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .split-workbench.active {
+      transform: translateX(0);
+    }
+
+    /* ========================================================
+       4. 左侧功能快捷侧轨 (Left Rail: 52px)
+       ======================================================== */
+    .left-rail {
+      width: var(--rail-width);
+      background: var(--bg-rail);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 0;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .rail-top-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
+    .rail-brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+      cursor: pointer;
+    }
+    .rail-brand-logo svg {
+      width: 18px;
+      height: 18px;
+      fill: #fff;
+    }
+    .rail-status-ring {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+      margin-top: -6px;
+    }
+    .rail-anchor-nav {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .rail-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .rail-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .rail-icon-btn.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+    }
+    .rail-icon-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+    .rail-tooltip {
+      position: absolute;
+      left: 60px;
+      background: #1e293b;
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 100;
+    }
+    .rail-icon-btn:hover .rail-tooltip {
+      opacity: 1;
+    }
+    .rail-bottom-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* ========================================================
+       5. 右侧主工作台面 (Right Main Workbench Deck: 458px)
+       ======================================================== */
+    .workbench-main-deck {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-surface);
+      position: relative;
+    }
+
+    /* 5.1 顶部全局命令胶囊条 (Command Bar) */
+    .command-header-bar {
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .command-search-capsule {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .command-search-capsule:focus-within {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    }
+    .command-search-capsule svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--text-muted);
+      fill: none;
+      stroke-width: 2;
+    }
+    .command-input {
+      flex: 1;
+      height: 32px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 12px;
+    }
+    .command-shortcut-badge {
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .cruise-pill-toggle {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: var(--accent-emerald);
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .cruise-pill-toggle:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+    .btn-close-deck {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+    .btn-close-deck:hover {
+      color: #fff;
+    }
+
+    /* 5.2 滚动工作台体 */
+    .deck-scroll-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+    .deck-scroll-body::-webkit-scrollbar {
+      width: 4px;
+    }
+    .deck-scroll-body::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 4px;
+    }
+
+    /* 5.3 模块卡片基类 */
+    .workbench-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s;
+    }
+    .workbench-card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+    .wb-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wb-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wb-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+
+    /* 5.4 上层：智慧树音视频情境感知监视器 */
+    .zhs-playback-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #f1f5f9;
+    }
+    .sound-wave-anim {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 14px;
+    }
+    .wave-bar {
+      width: 2px;
+      background: var(--accent-blue);
+      border-radius: 1px;
+      animation: waveOscillate 1.2s infinite ease-in-out;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+    @keyframes waveOscillate {
+      0%, 100% { height: 4px; }
+      50% { height: 14px; }
+    }
+    .speed-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .speed-slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .custom-range-bar {
+      width: 100%;
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+    }
+    .speed-chip-pills {
+      display: flex;
+      gap: 6px;
+    }
+    .spd-chip {
+      flex: 1;
+      padding: 4px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .spd-chip:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .spd-chip.active {
+      background: var(--accent-blue);
+      color: #fff;
+      border-color: var(--accent-blue);
+    }
+
+    /* 5.5 中层：双驱动力答题工坊 (Dual Engine Columns) */
+    .dual-engine-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .engine-col {
+      background: var(--bg-card-inner);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .engine-col-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .engine-result-answer {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+    .engine-col.db .engine-result-answer {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+    }
+    .engine-col.ai .engine-result-answer {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #a7f3d0;
+    }
+    .engine-reasoning-snippet {
+      font-size: 10px;
+      color: #cbd5e1;
+      line-height: 1.4;
+      font-family: monospace;
+      max-height: 60px;
+      overflow-y: auto;
+    }
+    .q-step-selector {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    .q-nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .q-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* 5.6 下层：诊断与实时微日志控制台 */
+    .diagnostic-panel {
+      background: #090d16;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 8px;
+    }
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .m-label {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .m-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      font-family: monospace;
+    }
+    .term-micro-log {
+      height: 90px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .micro-line {
+      display: flex;
+      gap: 6px;
+      color: #cbd5e1;
+    }
+    .m-time {
+      color: #64748b;
+    }
+    .m-tag {
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    /* 5.7 设置滑出抽屉 (Settings Flyout Overlay) */
+    .settings-subpanel {
+      position: absolute;
+      inset: 0;
+      background: #0e131f;
+      z-index: 20;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .settings-subpanel.active {
+      transform: translateX(0);
+    }
+    .subpanel-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .subpanel-body {
+      flex: 1;
+      padding: 16px 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .subpanel-foot {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #080b12;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .form-input {
+      background: #080c14;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 5px 8px;
+      color: #fff;
+      font-size: 11px;
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    /* 提示 Toast */
+    .wb-toast {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: #2563eb;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 20px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .wb-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 模拟智慧树网课界面背景 -->
+  <div class="mock-page">
+    <div class="zhs-topbar">
+      <div class="zhs-logo">
+        <span>智慧树 · 翻转课堂平台</span>
+        <span class="zhs-badge">在线学习</span>
+      </div>
+      <div class="zhs-course-info">
+        <span>课程：高等数学 (上) 2026学年</span>
+        <span>主讲：张教授</span>
+      </div>
+    </div>
+
+    <div class="zhs-body">
+      <div class="zhs-lesson-tree">
+        <div class="zhs-tree-header">📚 课程章节进度</div>
+        <div class="zhs-tree-content">
+          <div class="zhs-node">
+            <span>1.1 函数极限与连续性</span>
+            <span style="color:#10b981; font-weight:700;">✓ 已完成</span>
+          </div>
+          <div class="zhs-node active">
+            <span>1.2 导数的概念与几何意义</span>
+            <span style="color:#3b82f6; font-weight:700;">▶ 进行中 (82%)</span>
+          </div>
+          <div class="zhs-node">
+            <span>1.3 微分中值定理及应用</span>
+            <span style="color:#94a3b8;">未解锁</span>
+          </div>
+          <div class="zhs-node">
+            <span>2.1 不定积分与换元积分法</span>
+            <span style="color:#94a3b8;">未解锁</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="zhs-center-view">
+        <div class="zhs-video-wrapper">
+          <div class="zhs-overlay-bubble-tag">ABC 智慧树挂机模式激活</div>
+          <div class="zhs-player-center">
+            <svg style="width: 50px; height: 50px; fill: rgba(255,255,255,0.3); margin-bottom: 8px;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <h4>1.2 导数的定义与物理背景解析</h4>
+            <p style="font-size: 13px;">弹窗题目自动答题就绪 · 静音播放生效中</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 右侧边缘磁吸扁平胶囊 (Edge Magnetic Pill Trigger) -->
+  <div class="edge-pill-trigger" id="edgePillTrigger" onclick="openWorkbench(true)">
+    <div class="pill-pulse-dot"></div>
+    <div class="pill-text">ABC助手</div>
+    <div class="pill-speed">1.5x</div>
+  </div>
+
+  <!-- 3. 背景遮罩 -->
+  <div class="drawer-scrim" id="drawerScrim" onclick="openWorkbench(false)"></div>
+
+  <!-- 4. 双轨分舱抽屉工作台 (510px) -->
+  <div class="split-workbench" id="splitWorkbench">
+    <!-- 内部 Toast -->
+    <div class="wb-toast" id="wbToast">操作成功</div>
+
+    <!-- 4.1 左侧极窄侧轨 (Left Rail: 52px) -->
+    <nav class="left-rail">
+      <div class="rail-top-group">
+        <div class="rail-brand-logo" onclick="showNotification('ABC 助手核心状态: 正常巡航')">
+          <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="rail-status-ring" title="运行状态：良好"></div>
+
+        <div class="rail-anchor-nav">
+          <div class="rail-icon-btn active" title="全景工作台" onclick="selectRailNav(this, 'stage')">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span class="rail-tooltip">主工作台</span>
+          </div>
+          <div class="rail-icon-btn" title="题库与AI" onclick="selectRailNav(this, 'answers')">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="rail-tooltip">双驱答题</span>
+          </div>
+          <div class="rail-icon-btn" title="诊断控制台" onclick="selectRailNav(this, 'logs')">
+            <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            <span class="rail-tooltip">诊断终端</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-bottom-group">
+        <div class="rail-icon-btn" title="参数配置" onclick="toggleSettingsModal(true)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="rail-tooltip">系统配置</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 4.2 右侧主工作台面 (Main Workbench Deck: 458px) -->
+    <main class="workbench-main-deck">
+      <!-- 顶部指令条 (Command Capsule Bar) -->
+      <div class="command-header-bar">
+        <div class="command-search-capsule">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="command-input" id="cmdInput" placeholder="输入题目关键词或粘贴文本查题..." onkeydown="handleCmdKeyDown(event)">
+          <span class="command-shortcut-badge">Enter</span>
+        </div>
+
+        <div class="cruise-pill-toggle" id="cruiseBtn" onclick="toggleCruiseState()">
+          <span>● 自动巡航中</span>
+        </div>
+
+        <button class="btn-close-deck" title="收起工作台" onclick="openWorkbench(false)">
+          <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- 工作台滚动流 (打破固定Tab，组合情境卡片) -->
+      <div class="deck-scroll-body" id="deckScrollContainer">
+
+        <!-- 卡片 1: 智慧树音视频情境感知监视器 -->
+        <div class="workbench-card" id="cardStage">
+          <div class="wb-card-head">
+            <div class="wb-title">
+              <svg style="width:14px;height:14px;stroke:var(--accent-blue);fill:none;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              智慧树 · 1.2 导数的概念与几何意义
+            </div>
+            <div class="sound-wave-anim">
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+          </div>
+
+          <div class="zhs-playback-meta">
+            <span>播放进度: <strong>14:20 / 17:30 (82%)</strong></span>
+            <span style="color:var(--accent-teal); font-size:11px;">防作弊心跳: 38ms 良好</span>
+          </div>
+
+          <div class="speed-slider-wrap">
+            <div class="speed-slider-label">
+              <span>倍速无级微调</span>
+              <span id="speedValueLabel" style="font-weight:700; color:#3b82f6;">1.5x</span>
+            </div>
+            <input type="range" min="0.5" max="3.0" step="0.25" value="1.5" class="custom-range-bar" oninput="changeRangeSpeed(this.value)">
+            <div class="speed-chip-pills">
+              <div class="spd-chip" onclick="setFastSpeed(1.0)">1.0x</div>
+              <div class="spd-chip" onclick="setFastSpeed(1.25)">1.25x</div>
+              <div class="spd-chip active" onclick="setFastSpeed(1.5)">1.5x</div>
+              <div class="spd-chip" onclick="setFastSpeed(2.0)">2.0x</div>
+              <div class="spd-chip" onclick="setFastSpeed(2.5)">2.5x</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 2: 双驱智能答题对比矩阵 (Dual Engine Answer Matrix) -->
+        <div class="workbench-card" id="cardAnswers">
+          <div class="wb-card-head">
+            <div class="wb-title">
+              <svg style="width:14px;height:14px;stroke:var(--accent-emerald);fill:none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              双驱答题矩阵 (题库 vs AI 深度推理)
+            </div>
+            <span class="wb-badge">第 3 题 / 共 8 题</span>
+          </div>
+
+          <div class="q-step-selector">
+            <button class="q-nav-btn" onclick="prevQ()">‹ 上一题</button>
+            <span id="currentQTitle" style="font-weight:600;">#3 导数的物理意义是什么？</span>
+            <button class="q-nav-btn" onclick="nextQ()">下一题 ›</button>
+          </div>
+
+          <!-- 双列对比布局 -->
+          <div class="dual-engine-box">
+            <!-- 左列：云端题库精准匹配 -->
+            <div class="engine-col db">
+              <div class="engine-col-title">
+                <span>🏛️ 云端题库</span>
+                <span style="color:#60a5fa; font-size:10px;">99.8% 命中</span>
+              </div>
+              <div class="engine-result-answer">
+                匹配答案: [A] 瞬时速度
+              </div>
+              <div class="engine-reasoning-snippet">
+                指纹校验: 0x89f2a<br>
+                来源: 智慧树全国题库快照<br>
+                采纳状态: 已自动注入表单
+              </div>
+            </div>
+
+            <!-- 右列：AI 补漏推理解析 -->
+            <div class="engine-col ai">
+              <div class="engine-col-title">
+                <span>🤖 DeepSeek-V3</span>
+                <span style="color:#34d399; font-size:10px;">思考耗时 0.4s</span>
+              </div>
+              <div class="engine-result-answer">
+                推理推荐: [A] 瞬时速度
+              </div>
+              <div class="engine-reasoning-snippet">
+                导数表达位移对时间的变化率，物理意义即为物体的瞬时运动速度。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 3: 诊断控制台与实时指标 (Diagnostic & Micro Terminal) -->
+        <div class="diagnostic-panel" id="cardLogs">
+          <div class="metric-strip">
+            <div class="metric-item">
+              <span class="m-label">答题综合准确率</span>
+              <span class="m-val" style="color:var(--accent-emerald);">96.5%</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-label">平均查题延迟</span>
+              <span class="m-val" style="color:var(--accent-blue);">380 ms</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-label">挂机时长</span>
+              <span class="m-val">42 分钟</span>
+            </div>
+          </div>
+
+          <div class="term-micro-log" id="microLogBox">
+            <div class="micro-line">
+              <span class="m-time">10:35:01</span>
+              <span class="m-tag">[智慧树]</span>
+              <span>捕获弹窗测验，触发自动答题拦截器</span>
+            </div>
+            <div class="micro-line">
+              <span class="m-time">10:35:02</span>
+              <span class="m-tag">[题库云]</span>
+              <span>精准哈希命中 (延迟 210ms)，选择 [A]</span>
+            </div>
+            <div class="micro-line">
+              <span class="m-time">10:35:03</span>
+              <span class="m-tag">[AI强补]</span>
+              <span>DeepSeek 校验置信度 99.8%，无歧义</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 4.3 侧拉设置抽屉 (Subpanel Overlay) -->
+      <div class="settings-subpanel" id="settingsSubpanel">
+        <div class="subpanel-head">
+          <span>工作台参数与引擎设置</span>
+          <button class="btn-close-deck" onclick="toggleSettingsModal(false)">✕</button>
+        </div>
+        <div class="subpanel-body">
+          <div class="form-row">
+            <div>
+              <div style="font-weight:600;">智慧树弹窗题目自动秒过</div>
+              <div style="font-size:10px; color:var(--text-muted);">视频播放中途弹题自动选择并继续</div>
+            </div>
+            <input type="checkbox" checked style="accent-color: var(--accent-blue);">
+          </div>
+          <div class="form-row">
+            <div>
+              <div style="font-weight:600;">自动交卷及格线阈值</div>
+              <div style="font-size:10px; color:var(--text-muted);">低于此分数值时仅暂存不提交</div>
+            </div>
+            <input type="text" class="form-input" value="80分" style="width:70px; text-align:center;">
+          </div>
+          <div class="form-row">
+            <div>
+              <div style="font-weight:600;">AI 模型接入点 (Base URL)</div>
+              <div style="font-size:10px; color:var(--text-muted);">支持 OpenAI 协议与 DeepSeek 协议</div>
+            </div>
+            <input type="text" class="form-input" value="https://api.deepseek.com/v1" style="width:190px;">
+          </div>
+          <div class="form-row">
+            <div>
+              <div style="font-weight:600;">云端题库 Token 密钥</div>
+              <div style="font-size:10px; color:var(--text-muted);">剩余可查额度: 9,420 次</div>
+            </div>
+            <input type="password" class="form-input" value="ABC-TOKEN-8888" style="width:140px;">
+          </div>
+        </div>
+        <div class="subpanel-foot">
+          <button class="q-nav-btn" onclick="toggleSettingsModal(false)">取消</button>
+          <button class="q-nav-btn" style="background:var(--accent-blue);" onclick="saveWorkbenchSettings()">保存更改</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let isWorkbenchOpen = true;
+    let isCruising = true;
+    let currentQIndex = 3;
+
+    const mockQList = [
+      { id: 1, title: '#1 极限存在的最充分条件？', ans: '[C] 左右极限存在且相等', ai: '[C] 左右极限存在且相等' },
+      { id: 2, title: '#2 初等函数在其定义域内是否必然连续？', ans: '[A] 必然连续', ai: '[A] 必然连续' },
+      { id: 3, title: '#3 导数的物理意义是什么？', ans: '[A] 瞬时速度', ai: '[A] 瞬时速度' },
+      { id: 4, title: '#4 设 y = x^3，则 dy/dx 在 x=2 处的值为？', ans: '[B] 12', ai: '[B] 12' }
+    ];
+
+    function openWorkbench(open) {
+      isWorkbenchOpen = open;
+      const wb = document.getElementById('splitWorkbench');
+      const scrim = document.getElementById('drawerScrim');
+      const pill = document.getElementById('edgePillTrigger');
+
+      if (open) {
+        wb.classList.add('active');
+        scrim.classList.add('open');
+        pill.classList.add('hidden');
+      } else {
+        wb.classList.remove('active');
+        scrim.classList.remove('open');
+        pill.classList.remove('hidden');
+      }
+    }
+
+    function toggleCruiseState() {
+      isCruising = !isCruising;
+      const btn = document.getElementById('cruiseBtn');
+      if (isCruising) {
+        btn.innerHTML = '<span>● 自动巡航中</span>';
+        btn.style.background = 'rgba(16, 185, 129, 0.15)';
+        btn.style.color = '#10b981';
+        showNotification('已启动智慧树自动巡航');
+        addMicroLog('调度', '智慧树自动化任务链已继续执行');
+      } else {
+        btn.innerHTML = '<span>■ 已挂起暂停</span>';
+        btn.style.background = 'rgba(239, 68, 68, 0.15)';
+        btn.style.color = '#ef4444';
+        showNotification('已暂停挂机');
+        addMicroLog('警告', '用户暂停了自动挂机流水线');
+      }
+    }
+
+    function changeRangeSpeed(val) {
+      document.getElementById('speedValueLabel').textContent = val + 'x';
+      showNotification(`倍速已调整为: ${val}x`);
+      addMicroLog('倍速', `播放倍速设置为 ${val}x`);
+    }
+
+    function setFastSpeed(val) {
+      document.querySelectorAll('.spd-chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      changeRangeSpeed(val);
+    }
+
+    function prevQ() {
+      if (currentQIndex > 1) {
+        currentQIndex--;
+        updateQView();
+      }
+    }
+    function nextQ() {
+      if (currentQIndex < mockQList.length) {
+        currentQIndex++;
+        updateQView();
+      }
+    }
+    function updateQView() {
+      const q = mockQList[currentQIndex - 1];
+      document.getElementById('currentQTitle').textContent = q.title;
+      addMicroLog('题目', `切换查看试题 ${q.title}`);
+    }
+
+    function handleCmdKeyDown(e) {
+      if (e.key === 'Enter') {
+        const val = document.getElementById('cmdInput').value.trim();
+        if (val) {
+          showNotification(`检索题目: "${val}"`);
+          addMicroLog('即时搜', `云端匹配到 1 个最吻合答案: [A]`);
+        }
+      }
+    }
+
+    function toggleSettingsModal(show) {
+      const p = document.getElementById('settingsSubpanel');
+      if (show) p.classList.add('active');
+      else p.classList.remove('active');
+    }
+
+    function saveWorkbenchSettings() {
+      toggleSettingsModal(false);
+      showNotification('设置已保存');
+      addMicroLog('系统', '配置更新并重载防检测模块');
+    }
+
+    function selectRailNav(el, targetId) {
+      document.querySelectorAll('.rail-icon-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      if (targetId === 'stage') {
+        document.getElementById('cardStage').scrollIntoView({ behavior: 'smooth' });
+      } else if (targetId === 'answers') {
+        document.getElementById('cardAnswers').scrollIntoView({ behavior: 'smooth' });
+      } else if (targetId === 'logs') {
+        document.getElementById('cardLogs').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function addMicroLog(tag, msg) {
+      const box = document.getElementById('microLogBox');
+      const d = new Date();
+      const timeStr = [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+      const line = document.createElement('div');
+      line.className = 'micro-line';
+      line.innerHTML = `
+        <span class="m-time">${timeStr}</span>
+        <span class="m-tag">[${tag}]</span>
+        <span>${msg}</span>
+      `;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function showNotification(txt) {
+      const t = document.getElementById('wbToast');
+      t.textContent = txt;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // 默认打开抽屉展示
+    openWorkbench(true);
+  </script>
+</body>
+</html>

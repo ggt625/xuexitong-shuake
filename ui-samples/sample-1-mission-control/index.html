@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC网课助手 · UI重构样品 1 - 全景中控流 (Mission Control)</title>
+  <style>
+    /* CSS Reset & Variables */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-panel: rgba(16, 23, 38, 0.94);
+      --bg-card: rgba(26, 36, 58, 0.7);
+      --bg-card-hover: rgba(35, 49, 78, 0.85);
+      --border-subtle: rgba(79, 110, 168, 0.22);
+      --border-focus: rgba(0, 242, 254, 0.5);
+      --accent-cyan: #00f2fe;
+      --accent-blue: #2563eb;
+      --accent-indigo: #4f46e5;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --drawer-width: 480px;
+      --glow-cyan: 0 0 20px rgba(0, 242, 254, 0.35);
+      --glow-emerald: 0 0 16px rgba(16, 185, 129, 0.4);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #0f172a;
+      color: #334155;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      user-select: none;
+    }
+
+    /* ========================================================
+       1. 模拟网课平台背景 (超星学习通风格真实页面)
+       ======================================================== */
+    .mock-page {
+      position: absolute;
+      inset: 0;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .mock-topbar {
+      height: 52px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .mock-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 15px;
+    }
+    .mock-logo svg {
+      width: 26px;
+      height: 26px;
+      fill: #2563eb;
+    }
+    .mock-crumbs {
+      color: #64748b;
+      font-size: 13px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .mock-crumbs span.active {
+      color: #1e293b;
+      font-weight: 600;
+    }
+    .mock-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #475569;
+    }
+    .mock-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .mock-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .mock-sidebar {
+      width: 290px;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 0;
+    }
+    .mock-course-title {
+      padding: 0 20px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mock-chapter-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    .mock-ch-item {
+      padding: 9px 12px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #475569;
+      cursor: pointer;
+    }
+    .mock-ch-item:hover {
+      background: #f1f5f9;
+    }
+    .mock-ch-item.active {
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 600;
+    }
+    .mock-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+    .mock-main-content {
+      flex: 1;
+      background: #f8fafc;
+      padding: 24px 32px;
+      overflow-y: auto;
+    }
+    .mock-player-box {
+      background: #000;
+      border-radius: 12px;
+      height: 480px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .mock-player-canvas {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+    }
+    .mock-player-canvas h3 {
+      color: #f8fafc;
+      font-size: 18px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .mock-player-ctrl {
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+      padding: 16px 20px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mock-play-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+      position: relative;
+    }
+    .mock-play-progress {
+      width: 85%;
+      height: 100%;
+      background: #3b82f6;
+      border-radius: 2px;
+    }
+    .mock-play-btns {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    /* ========================================================
+       2. 悬浮气泡 (Floating Bubble / Orb Trigger)
+       ======================================================== */
+    .assistant-bubble {
+      position: fixed;
+      right: 28px;
+      bottom: 60px;
+      z-index: 9999;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .assistant-bubble:hover {
+      transform: scale(1.06) translateY(-2px);
+    }
+    .assistant-bubble.hidden {
+      display: none;
+    }
+    .bubble-orb {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border: 1.5px solid var(--accent-cyan);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), var(--glow-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: visible;
+    }
+    .bubble-pulse-ring {
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-cyan);
+      opacity: 0.7;
+      animation: bubblePulse 2.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      pointer-events: none;
+    }
+    @keyframes bubblePulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.18); opacity: 0.15; }
+      100% { transform: scale(1.28); opacity: 0; }
+    }
+    .bubble-svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: var(--accent-cyan);
+      stroke-width: 2;
+    }
+    .bubble-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: var(--accent-emerald);
+      color: #042f2e;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 5px;
+      border-radius: 10px;
+      border: 1.5px solid #0f172a;
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+    .bubble-label-pill {
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-subtle);
+      color: #e2e8f0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      white-space: nowrap;
+    }
+    .bubble-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 6px var(--accent-emerald);
+    }
+
+    /* ========================================================
+       3. 右侧抽屉容器 (Mission Control Drawer - 480px)
+       ======================================================== */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 13, 0.45);
+      backdrop-filter: blur(2px);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .drawer-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mission-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: var(--drawer-width);
+      max-width: 100vw;
+      background: var(--bg-panel);
+      backdrop-filter: blur(20px);
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.7);
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(105%);
+      transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      color: var(--text-main);
+      overflow: hidden;
+    }
+    .mission-drawer.open {
+      transform: translateX(0);
+    }
+
+    /* ========================================================
+       4. 抽屉内部结构 (完全脱离固定 Tab，采用情境全景流)
+       ======================================================== */
+    
+    /* 4.1 顶部中控台顶栏 (Header Ribbon) */
+    .drawer-header {
+      padding: 14px 18px 12px;
+      background: linear-gradient(180deg, rgba(22, 32, 53, 0.8) 0%, rgba(16, 23, 38, 0.6) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .header-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+    }
+    .brand-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: #fff;
+    }
+    .brand-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pro-badge {
+      font-size: 9px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #f59e0b, #ec4899);
+      color: #fff;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .icon-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: var(--border-focus);
+    }
+    .icon-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* 4.2 管道流指示器 (Mission Pipeline Stepper) */
+    .pipeline-bar {
+      background: rgba(10, 15, 26, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .pipe-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+      position: relative;
+    }
+    .pipe-step.done {
+      color: var(--accent-emerald);
+    }
+    .pipe-step.active {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+    .pipe-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .pipe-step.active .pipe-dot {
+      background: rgba(0, 242, 254, 0.2);
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+    .pipe-arrow {
+      color: rgba(255, 255, 255, 0.15);
+      font-size: 10px;
+    }
+
+    /* 4.3 可滚动中控工坊 (Scrollable Workbench Area) */
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+    .drawer-content::-webkit-scrollbar {
+      width: 5px;
+    }
+    .drawer-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+    }
+
+    /* 4.4 模块卡片通用基类 */
+    .bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .bento-card:hover {
+      border-color: rgba(0, 242, 254, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .card-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-title-icon {
+      width: 14px;
+      height: 14px;
+      stroke: var(--accent-cyan);
+      fill: none;
+      stroke-width: 2;
+    }
+    .card-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+    .card-tag.cyan {
+      background: rgba(0, 242, 254, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+    }
+    .card-tag.emerald {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    /* 4.5 模块 1: 实时任务点巡航卡 (Live Mission Radar) */
+    .mission-meta-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .playback-progress-wrap {
+      margin-bottom: 10px;
+    }
+    .time-readout {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .progress-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0ea5e9, var(--accent-cyan));
+      border-radius: 3px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+    }
+    .speed-selector-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .speed-btn {
+      flex: 1;
+      padding: 5px 0;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .speed-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .speed-btn.active {
+      background: var(--accent-cyan);
+      color: #042f2e;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+    }
+    .cruise-toggles-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .toggle-chip {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .toggle-chip:hover {
+      border-color: var(--border-focus);
+    }
+    .toggle-chip-label {
+      font-size: 11px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .toggle-switch-ui {
+      width: 28px;
+      height: 16px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      position: relative;
+      transition: background 0.25s;
+    }
+    .toggle-switch-ui::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.25s;
+    }
+    .toggle-chip.active .toggle-switch-ui {
+      background: var(--accent-emerald);
+    }
+    .toggle-chip.active .toggle-switch-ui::after {
+      transform: translateX(12px);
+    }
+
+    /* 4.6 模块 2: 答题与题库实时看板 (Exam Matrix & Knowledge Match) */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .matrix-cell {
+      height: 26px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 1px solid transparent;
+    }
+    .matrix-cell:hover {
+      transform: translateY(-2px);
+    }
+    .matrix-cell.hit {
+      background: rgba(14, 165, 233, 0.25);
+      color: var(--accent-cyan);
+      border-color: rgba(14, 165, 233, 0.5);
+    }
+    .matrix-cell.ai {
+      background: rgba(16, 185, 129, 0.25);
+      color: var(--accent-emerald);
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+    .matrix-cell.active-item {
+      outline: 2px solid #fff;
+      box-shadow: 0 0 10px #fff;
+    }
+    .matrix-cell.pending {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-dim);
+    }
+    .current-q-detail {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .q-type-badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(37, 99, 235, 0.3);
+      color: #93c5fd;
+      margin-right: 6px;
+      font-weight: 600;
+    }
+    .q-stem {
+      color: #f1f5f9;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+    .q-answer-box {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #a7f3d0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .q-source-tag {
+      font-size: 10px;
+      color: var(--accent-emerald);
+      opacity: 0.85;
+    }
+
+    /* 4.7 模块 3: AI 盲区深度补漏工坊 (AI Co-pilot Engine) */
+    .ai-model-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .model-pill {
+      flex: 1;
+      padding: 4px 0;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .model-pill.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.4));
+      border-color: rgba(168, 85, 247, 0.6);
+      color: #fff;
+    }
+    .ai-output-stream {
+      background: rgba(8, 12, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      max-height: 110px;
+      overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .ai-stream-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* 4.8 模块 4: 极速搜题与查题沙盒 (Quick Search Sandbox) */
+    .search-box-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .search-input-field {
+      flex: 1;
+      background: rgba(10, 15, 26, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input-field:focus {
+      border-color: var(--accent-cyan);
+    }
+    .search-run-btn {
+      padding: 0 12px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: opacity 0.2s;
+    }
+    .search-run-btn:hover {
+      opacity: 0.9;
+    }
+    .preset-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .chip-btn:hover {
+      color: #fff;
+      border-color: var(--border-focus);
+    }
+
+    /* 4.9 模块 5: 实时 HUD 终端日志 (HUD Live Terminal) */
+    .terminal-card {
+      background: #080c14;
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .terminal-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 6px;
+    }
+    .terminal-dots {
+      display: flex;
+      gap: 4px;
+    }
+    .t-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+    .t-dot.red { background: #ef4444; }
+    .t-dot.yellow { background: #f59e0b; }
+    .t-dot.green { background: #10b981; }
+    .terminal-actions {
+      display: flex;
+      gap: 8px;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .terminal-btn {
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .terminal-btn:hover {
+      color: #fff;
+    }
+    .terminal-window {
+      height: 120px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+    .terminal-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .t-time {
+      color: #64748b;
+      flex-shrink: 0;
+    }
+    .t-tag {
+      padding: 0 4px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .t-tag.info { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .t-tag.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .t-tag.warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .t-tag.ai { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+    .t-msg {
+      color: #cbd5e1;
+      word-break: break-all;
+    }
+
+    /* 4.10 抽屉底栏 & 侧滑设置展开层 (Bottom Dock & Flyout Settings) */
+    .drawer-footer {
+      padding: 10px 18px;
+      background: rgba(12, 18, 30, 0.95);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      font-size: 11px;
+    }
+    .quota-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+    .quota-pill {
+      background: rgba(0, 242, 254, 0.12);
+      color: var(--accent-cyan);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+    .footer-btns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .settings-trigger-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: #e2e8f0;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .settings-trigger-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--accent-cyan);
+      color: #fff;
+    }
+
+    /* 4.11 内嵌侧滑设置面板 (Flyout Settings Panel) */
+    .flyout-settings-panel {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-panel);
+      backdrop-filter: blur(24px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .flyout-settings-panel.active {
+      transform: translateX(0);
+    }
+    .flyout-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .flyout-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .flyout-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .setting-group {
+      background: rgba(26, 36, 58, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .setting-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setting-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .setting-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .setting-input {
+      background: rgba(10, 15, 26, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 11px;
+      width: 140px;
+      text-align: right;
+    }
+    .save-settings-bar {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(10, 15, 26, 0.9);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .btn-save {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* 提示 Toast */
+    .toast-msg {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: rgba(16, 185, 129, 0.95);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .toast-msg.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 模拟网课主界面背景 (超星学习通) -->
+  <div class="mock-page">
+    <div class="mock-topbar">
+      <div class="mock-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span>超星学习通 · 教学空间</span>
+      </div>
+      <div class="mock-crumbs">
+        <span>我的课程</span> / <span>思想政治核心课</span> / <span class="active">毛泽东思想体系 (2026秋)</span>
+      </div>
+      <div class="mock-user">
+        <div class="mock-avatar">李</div>
+        <span>李同学 (2023091104)</span>
+      </div>
+    </div>
+
+    <div class="mock-body">
+      <!-- 课程左侧树 -->
+      <div class="mock-sidebar">
+        <div class="mock-course-title">
+          <span>📑 章节目录</span>
+        </div>
+        <div class="mock-chapter-list">
+          <div class="mock-ch-item">
+            <span>第一章 马克思主义中国化</span>
+            <span class="mock-badge-dot"></span>
+          </div>
+          <div class="mock-ch-item">
+            <span>第二章 新民主主义革命理论</span>
+            <span class="mock-badge-dot"></span>
+          </div>
+          <div class="mock-ch-item active">
+            <span>第三章 思想路线的形成与发展</span>
+            <span style="font-size: 11px; color:#2563eb;">● 85%</span>
+          </div>
+          <div class="mock-ch-item">
+            <span>第四章 社会主义建设道路初步探索</span>
+            <span style="font-size: 11px; color:#94a3b8;">未开始</span>
+          </div>
+          <div class="mock-ch-item">
+            <span>第五章 邓小平理论</span>
+            <span style="font-size: 11px; color:#94a3b8;">未开始</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 课件与播放区 -->
+      <div class="mock-main-content">
+        <div class="mock-player-box">
+          <div class="mock-player-canvas">
+            <svg style="width: 56px; height: 56px; fill: rgba(255,255,255,0.2); margin-bottom: 12px;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <h3>3.2 实事求是思想路线的确立与检验</h3>
+            <p style="font-size: 12px;">学习通原生播放器正在运行中 · ABC网课助手已成功接管音视频流水线</p>
+          </div>
+          <div class="mock-player-ctrl">
+            <div class="mock-play-bar">
+              <div class="mock-play-progress" id="mockMainProgress"></div>
+            </div>
+            <div class="mock-play-btns">
+              <span>▶ 正在播放 (1.5x)</span>
+              <span id="mockMainTimer">12:18 / 14:30 (85%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 悬浮气泡 (Floating Bubble Trigger) -->
+  <div class="assistant-bubble" id="assistantBubble" onclick="toggleDrawer()">
+    <div class="bubble-label-pill">
+      <div class="bubble-live-dot"></div>
+      <span>ABC托管中 · 1.5x</span>
+    </div>
+    <div class="bubble-orb">
+      <div class="bubble-pulse-ring"></div>
+      <svg class="bubble-svg" viewBox="0 0 24 24">
+        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5h-2v-2h2zm0-4h-2V7h2z"/>
+      </svg>
+      <span class="bubble-badge">PRO</span>
+    </div>
+  </div>
+
+  <!-- 3. 背景遮罩 -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer(false)"></div>
+
+  <!-- 4. 右侧抽屉 (Mission Control Drawer - 480px) -->
+  <aside class="mission-drawer" id="missionDrawer">
+    <!-- Toast 通知 -->
+    <div class="toast-msg" id="toastMsg">配置已同步生效</div>
+
+    <!-- 顶部控制条 -->
+    <div class="drawer-header">
+      <div class="header-main-row">
+        <div class="brand-group">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div class="brand-title-wrap">
+            <div class="brand-title">
+              ABC网课助手 <span class="pro-badge">v2.4 Pro</span>
+            </div>
+            <span class="brand-sub">超星学习通 · 极速全托管引擎</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="icon-btn" title="托管开关" id="masterSwitchBtn" onclick="toggleMasterRun()">
+            <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
+          </button>
+          <button class="icon-btn" title="收起抽屉" onclick="toggleDrawer(false)">
+            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 任务流水线状态 (Pipeline Stepper) -->
+      <div class="pipeline-bar">
+        <div class="pipe-step done">
+          <div class="pipe-dot">✓</div>
+          <span>导读文档</span>
+        </div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step active">
+          <div class="pipe-dot">●</div>
+          <span>视频播放(85%)</span>
+        </div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">
+          <div class="pipe-dot">3</div>
+          <span>章节测验</span>
+        </div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">
+          <div class="pipe-dot">4</div>
+          <span>自动交卷</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 抽屉核心内容区 (自由卡片流，不拘泥单一Tab) -->
+    <div class="drawer-content">
+
+      <!-- 卡片 1: 实时任务点巡航卡 (Live Mission Radar) -->
+      <div class="bento-card">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            当前任务点 · 视频巡航
+          </div>
+          <span class="card-tag cyan" id="radarStatusTag">加速运行中 (1.5x)</span>
+        </div>
+
+        <div class="mission-meta-title">
+          3.2 思想路线的形成与发展 (视频任务点)
+        </div>
+
+        <div class="playback-progress-wrap">
+          <div class="time-readout">
+            <span id="timeNow">12:18</span>
+            <span id="timeTotal">14:30 (85%)</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="playbackProgress" style="width: 85%;"></div>
+          </div>
+        </div>
+
+        <div class="speed-selector-row">
+          <div class="speed-btn" onclick="setSpeed(1.0, this)">1.0x</div>
+          <div class="speed-btn" onclick="setSpeed(1.25, this)">1.25x</div>
+          <div class="speed-btn active" onclick="setSpeed(1.5, this)">1.5x</div>
+          <div class="speed-btn" onclick="setSpeed(2.0, this)">2.0x</div>
+          <div class="speed-btn" onclick="setSpeed(16.0, this)">⚡秒过</div>
+        </div>
+
+        <div class="cruise-toggles-grid">
+          <div class="toggle-chip active" onclick="toggleChip(this, '静音播放')">
+            <span class="toggle-chip-label">🔇 静音播放</span>
+            <div class="toggle-switch-ui"></div>
+          </div>
+          <div class="toggle-chip active" onclick="toggleChip(this, '自动下一节')">
+            <span class="toggle-chip-label">⏭ 自动下一节</span>
+            <div class="toggle-switch-ui"></div>
+          </div>
+          <div class="toggle-chip active" onclick="toggleChip(this, '防卡死心跳')">
+            <span class="toggle-chip-label">💓 0.8s防卡死</span>
+            <div class="toggle-switch-ui"></div>
+          </div>
+          <div class="toggle-chip active" onclick="toggleChip(this, '字体解密')">
+            <span class="toggle-chip-label">🔠 字体解密</span>
+            <div class="toggle-switch-ui"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 答题与题库实时看板 (Exam Matrix & Knowledge Match) -->
+      <div class="bento-card">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            章节测验实时看板 (10题)
+          </div>
+          <span class="card-tag emerald">命中率 90% (9/10)</span>
+        </div>
+
+        <!-- 10个题号指示格子 -->
+        <div class="matrix-grid">
+          <div class="matrix-cell hit" onclick="selectQuestion(1, this)">1</div>
+          <div class="matrix-cell hit" onclick="selectQuestion(2, this)">2</div>
+          <div class="matrix-cell hit" onclick="selectQuestion(3, this)">3</div>
+          <div class="matrix-cell ai active-item" onclick="selectQuestion(4, this)">4</div>
+          <div class="matrix-cell hit" onclick="selectQuestion(5, this)">5</div>
+          <div class="matrix-cell hit" onclick="selectQuestion(6, this)">6</div>
+          <div class="matrix-cell hit" onclick="selectQuestion(7, this)">7</div>
+          <div class="matrix-cell ai" onclick="selectQuestion(8, this)">8</div>
+          <div class="matrix-cell hit" onclick="selectQuestion(9, this)">9</div>
+          <div class="matrix-cell pending" onclick="selectQuestion(10, this)">10</div>
+        </div>
+
+        <!-- 选中题目详情小卡片 -->
+        <div class="current-q-detail" id="qDetailBox">
+          <div class="q-stem">
+            <span class="q-type-badge">单选题</span>
+            <span id="qStemText">党的思想路线的实质和核心是？</span>
+          </div>
+          <div class="q-answer-box">
+            <span>匹配答案：<strong id="qAnswerText">B. 实事求是</strong></span>
+            <span class="q-source-tag" id="qSourceTag">🤖 DeepSeek-V3 补漏 (置信度 99.4%)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 3: AI 盲区补漏协同工坊 (AI Co-pilot Engine) -->
+      <div class="bento-card">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4 4 4 0 0 1-4-4V6a4 4 0 0 1 4-4zM6 14a6 6 0 0 0 12 0v-1H6v1z"/></svg>
+            AI 补漏推理引擎
+          </div>
+          <span class="card-tag cyan" style="cursor:pointer;" onclick="triggerAiSimulate()">⚡ 模拟解题</span>
+        </div>
+
+        <div class="ai-model-tabs">
+          <div class="model-pill active" onclick="switchModel('DeepSeek-V3', this)">DeepSeek-V3</div>
+          <div class="model-pill" onclick="switchModel('GPT-4o mini', this)">GPT-4o mini</div>
+          <div class="model-pill" onclick="switchModel('Qwen-Plus', this)">Qwen-Plus</div>
+        </div>
+
+        <div class="ai-output-stream" id="aiStreamBox">
+          <span style="color:#60a5fa;">[Thinking]</span> 正在解析题目上下文与混淆字符...<br>
+          本题考查毛泽东思想路线的核心要义。“实事求是”是毛泽东思想的精髓，也是党的根本思想路线的核心所在。<br>
+          <strong style="color:#34d399;">最终推导答案：[B]</strong>
+        </div>
+        <div class="ai-stream-meta">
+          <span>延迟: 480ms · Tokens: 1,280</span>
+          <span>状态: 校验通过并自动注入</span>
+        </div>
+      </div>
+
+      <!-- 卡片 4: 极速搜题沙盒 (Quick Search Sandbox) -->
+      <div class="bento-card">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            即时题库查题沙盒
+          </div>
+          <span class="card-tag">划词自动查: 开启</span>
+        </div>
+
+        <div class="search-box-row">
+          <input type="text" class="search-input-field" id="searchInput" placeholder="粘贴题目内容或输入关键词..." value="党的思想路线的实质和核心">
+          <button class="search-run-btn" onclick="executeSearch()">
+            <span>检索</span>
+          </button>
+        </div>
+
+        <div class="preset-chips">
+          <div class="chip-btn" onclick="quickFillSearch('实事求是思想路线')"># 实事求是</div>
+          <div class="chip-btn" onclick="quickFillSearch('马克思主义中国化')"># 中国化飞跃</div>
+          <div class="chip-btn" onclick="quickFillSearch('新民主主义革命三大法宝')"># 三大法宝</div>
+        </div>
+      </div>
+
+      <!-- 卡片 5: 实时 HUD 终端日志 (Live HUD Terminal) -->
+      <div class="terminal-card">
+        <div class="terminal-top-row">
+          <div class="terminal-dots">
+            <div class="t-dot red"></div>
+            <div class="t-dot yellow"></div>
+            <div class="t-dot green"></div>
+            <span style="color: #64748b; font-size: 10px; margin-left: 6px;">ABC-RUNTIME-LOG</span>
+          </div>
+          <div class="terminal-actions">
+            <span class="terminal-btn" onclick="clearLogs()">清空</span>
+            <span class="terminal-btn" id="logScrollBtn" onclick="toggleLogScroll()">自滚动[开]</span>
+          </div>
+        </div>
+        <div class="terminal-window" id="terminalWindow">
+          <div class="terminal-line">
+            <span class="t-time">10:24:12</span>
+            <span class="t-tag info">视频</span>
+            <span class="t-msg">检测到任务点视频，当前播放进度 85%，倍速 1.5x</span>
+          </div>
+          <div class="terminal-line">
+            <span class="t-time">10:24:15</span>
+            <span class="t-tag success">解密</span>
+            <span class="t-msg">超星字体映射解密完成，恢复 48 个混淆字符</span>
+          </div>
+          <div class="terminal-line">
+            <span class="t-time">10:24:18</span>
+            <span class="t-tag info">题库</span>
+            <span class="t-msg">题目 #1、#2、#3 命中 ABC 云端题库 (置信度 99%)</span>
+          </div>
+          <div class="terminal-line">
+            <span class="t-time">10:24:22</span>
+            <span class="t-tag ai">AI补漏</span>
+            <span class="t-msg">题目 #4 云端未收录，DeepSeek-V3 智能答题返回 [B]</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部状态与快速配置栏 -->
+    <div class="drawer-footer">
+      <div class="quota-info">
+        <span>云端题库额度:</span>
+        <span class="quota-pill">9,420 次</span>
+      </div>
+      <div class="footer-btns">
+        <button class="settings-trigger-btn" onclick="toggleSettingsPanel(true)">
+          <svg style="width:13px; height:13px; stroke:currentColor; fill:none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>全局设置</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 侧滑内嵌设置面板 (Flyout Overlay) -->
+    <div class="flyout-settings-panel" id="flyoutSettings">
+      <div class="flyout-header">
+        <div class="flyout-title">
+          <svg style="width:16px;height:16px;fill:none;stroke:var(--accent-cyan);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          ABC助手 · 核心参数配置
+        </div>
+        <button class="icon-btn" onclick="toggleSettingsPanel(false)">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="flyout-content">
+        <div class="setting-group">
+          <div class="setting-group-title">自动答题与提交策略</div>
+          <div class="setting-item-row">
+            <div>
+              <div>自动完成作业/测验</div>
+              <div class="setting-desc">满足设定正确率时自动答题</div>
+            </div>
+            <input type="checkbox" checked style="accent-color: var(--accent-emerald);">
+          </div>
+          <div class="setting-item-row">
+            <div>
+              <div>自动交卷阈值</div>
+              <div class="setting-desc">默认 80% (不足则自动暂存)</div>
+            </div>
+            <input type="text" class="setting-input" value="85%">
+          </div>
+          <div class="setting-item-row">
+            <div>
+              <div>搜题请求防刷间隔</div>
+              <div class="setting-desc">建议 2.0s - 3.5s</div>
+            </div>
+            <input type="text" class="setting-input" value="2.5 秒">
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-group-title">AI 大模型配置 (OpenAI 兼容)</div>
+          <div class="setting-item-row">
+            <div>
+              <div>模型 API 接口地址</div>
+              <div class="setting-desc">可填写官方或中转代理 URL</div>
+            </div>
+            <input type="text" class="setting-input" value="api.deepseek.com" style="width:160px;">
+          </div>
+          <div class="setting-item-row">
+            <div>
+              <div>模型 API 密钥 (Token)</div>
+              <div class="setting-desc">sk-xxxxxxxxxxxx</div>
+            </div>
+            <input type="password" class="setting-input" value="sk-8848abc123456" style="width:160px;">
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-group-title">防检测与安全防御</div>
+          <div class="setting-item-row">
+            <div>
+              <div>人脸识别弹窗声音预警</div>
+              <div class="setting-desc">检测到人脸验证时蜂鸣提示</div>
+            </div>
+            <input type="checkbox" checked style="accent-color: var(--accent-emerald);">
+          </div>
+          <div class="setting-item-row">
+            <div>
+              <div>后台失焦保护</div>
+              <div class="setting-desc">浏览器切后台时伪装持续活跃</div>
+            </div>
+            <input type="checkbox" checked style="accent-color: var(--accent-emerald);">
+          </div>
+        </div>
+      </div>
+
+      <div class="save-settings-bar">
+        <button class="settings-trigger-btn" onclick="toggleSettingsPanel(false)">取消</button>
+        <button class="btn-save" onclick="saveSettings()">保存生效</button>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    // 状态管理与模拟交互
+    let isDrawerOpen = true;
+    let isRunning = true;
+    let autoScroll = true;
+
+    // 题目数据
+    const questions = {
+      1: { type: '单选题', stem: '马克思主义中国化的第一次历史性飞跃形成的理论成果是？', ans: 'A. 毛泽东思想', src: '🏛️ ABC自建题库 (命中率 99.8%)' },
+      2: { type: '多选题', stem: '毛泽东思想活的灵魂是贯穿其中的立场、观点、方法，它们是？', ans: 'A. 实事求是, B. 群众路线, C. 独立自主', src: '🏛️ ABC自建题库 (命中率 100%)' },
+      3: { type: '判断题', stem: '实事求是是毛泽东思想的精髓。', ans: '正确 (√)', src: '🏛️ 云端公共库 (命中率 99.0%)' },
+      4: { type: '单选题', stem: '党的思想路线的实质和核心是？', ans: 'B. 实事求是', src: '🤖 DeepSeek-V3 补漏 (置信度 99.4%)' },
+      5: { type: '多选题', stem: '中国共产党区别于其他政党的显著标志是？', ans: 'A. 理论联系实际, B. 密切联系群众, C. 批评与自我批评', src: '🏛️ ABC自建题库 (命中率 98.7%)' },
+      6: { type: '单选题', stem: '近代中国最基本的国情是？', ans: 'C. 半殖民地半封建社会', src: '🏛️ ABC自建题库 (命中率 99.5%)' },
+      7: { type: '判断题', stem: '新民主主义革命的前途是建立资本主义共和国。', ans: '错误 (×)', src: '🏛️ 云端公共库 (命中率 99.2%)' },
+      8: { type: '简答题', stem: '简述新民主主义革命的总路线及其内涵。', ans: '无产阶级领导的，人民大众的，反对帝国主义、封建主义和官僚资本主义的革命。', src: '🤖 Qwen-Plus 结构化解答 (评分 98)' },
+      9: { type: '单选题', stem: '新民主主义革命的三大法宝是？', ans: 'A. 统一战线、武装斗争、党的建设', src: '🏛️ ABC自建题库 (命中率 99.9%)' },
+      10: { type: '单选题', stem: '中国革命走农村包围城市、武装夺取政权道路的根本在于？', ans: '正在等待下一轮检索调度...', src: '⏳ 待处理队列中' }
+    };
+
+    function toggleDrawer(force) {
+      if (typeof force === 'boolean') {
+        isDrawerOpen = force;
+      } else {
+        isDrawerOpen = !isDrawerOpen;
+      }
+      const drawer = document.getElementById('missionDrawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const bubble = document.getElementById('assistantBubble');
+
+      if (isDrawerOpen) {
+        drawer.classList.add('open');
+        overlay.classList.add('active');
+        bubble.classList.add('hidden');
+      } else {
+        drawer.classList.remove('open');
+        overlay.classList.remove('active');
+        bubble.classList.remove('hidden');
+      }
+    }
+
+    function toggleMasterRun() {
+      isRunning = !isRunning;
+      const btn = document.getElementById('masterSwitchBtn');
+      const tag = document.getElementById('radarStatusTag');
+      if (isRunning) {
+        btn.style.color = '#10b981';
+        tag.textContent = '加速运行中 (1.5x)';
+        tag.className = 'card-tag cyan';
+        appendLog('视频', '全自动托管引擎已恢复运行');
+        showToast('全托管流水线已启动');
+      } else {
+        btn.style.color = '#ef4444';
+        tag.textContent = '已挂起暂停';
+        tag.className = 'card-tag';
+        appendLog('警告', '用户手动暂停了全局刷课');
+        showToast('已暂停自动刷课与答题');
+      }
+    }
+
+    function setSpeed(spd, el) {
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      appendLog('倍速', `播放倍速已切换至 ${spd}x`);
+      showToast(`播放倍速调整为 ${spd}x`);
+      document.getElementById('radarStatusTag').textContent = `加速运行中 (${spd}x)`;
+    }
+
+    function toggleChip(el, name) {
+      el.classList.toggle('active');
+      const state = el.classList.contains('active') ? '开启' : '关闭';
+      appendLog('控制', `${name} 已${state}`);
+    }
+
+    function selectQuestion(idx, el) {
+      document.querySelectorAll('.matrix-cell').forEach(c => c.classList.remove('active-item'));
+      el.classList.add('active-item');
+      const q = questions[idx];
+      if (q) {
+        document.getElementById('qStemText').textContent = q.stem;
+        document.getElementById('qAnswerText').textContent = q.ans;
+        document.getElementById('qSourceTag').textContent = q.src;
+        appendLog('题目', `正在预览试题 #${idx} 匹配详情`);
+      }
+    }
+
+    function switchModel(name, el) {
+      document.querySelectorAll('.model-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      appendLog('AI', `补漏核心引擎切换为: ${name}`);
+      showToast(`已切换推理模型: ${name}`);
+    }
+
+    function triggerAiSimulate() {
+      const box = document.getElementById('aiStreamBox');
+      box.innerHTML = '<span style="color:#f59e0b;">[DeepSeek Thinking...]</span> 正在分析超星加密混淆试题与语义关联...<br>';
+      setTimeout(() => {
+        box.innerHTML += '已解密题意：本题考察思想路线核心。通过对比毛泽东选集第二卷论述，排除 [A/C/D]。<br><strong style="color:#34d399;">推导结果：[B. 实事求是] (置信度 99.8%)</strong>';
+        appendLog('AI补漏', '模拟解题完成，耗时 320ms');
+      }, 700);
+    }
+
+    function executeSearch() {
+      const val = document.getElementById('searchInput').value.trim();
+      if (!val) return;
+      appendLog('查题', `检索题目: "${val}"`);
+      showToast(`已从云端与本地库检索到 3 条匹配`);
+    }
+
+    function quickFillSearch(str) {
+      document.getElementById('searchInput').value = str;
+      executeSearch();
+    }
+
+    function toggleSettingsPanel(show) {
+      const panel = document.getElementById('flyoutSettings');
+      if (show) {
+        panel.classList.add('active');
+      } else {
+        panel.classList.remove('active');
+      }
+    }
+
+    function saveSettings() {
+      toggleSettingsPanel(false);
+      showToast('全局参数已保存生效');
+      appendLog('配置', '用户更新了全局防检测与答题策略');
+    }
+
+    function appendLog(tag, msg) {
+      const win = document.getElementById('terminalWindow');
+      const d = new Date();
+      const timeStr = [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+      
+      const line = document.createElement('div');
+      line.className = 'terminal-line';
+      let tagClass = 'info';
+      if (tag === '警告') tagClass = 'warn';
+      if (tag === 'AI' || tag === 'AI补漏') tagClass = 'ai';
+      if (tag === '解密' || tag === '题库') tagClass = 'success';
+
+      line.innerHTML = `
+        <span class="t-time">${timeStr}</span>
+        <span class="t-tag ${tagClass}">${tag}</span>
+        <span class="t-msg">${msg}</span>
+      `;
+      win.appendChild(line);
+      if (autoScroll) {
+        win.scrollTop = win.scrollHeight;
+      }
+    }
+
+    function clearLogs() {
+      document.getElementById('terminalWindow').innerHTML = '';
+      showToast('日志已清空');
+    }
+
+    function toggleLogScroll() {
+      autoScroll = !autoScroll;
+      document.getElementById('logScrollBtn').textContent = autoScroll ? '自滚动[开]' : '自滚动[关]';
+    }
+
+    function showToast(text) {
+      const t = document.getElementById('toastMsg');
+      t.textContent = text;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // 默认打开抽屉方便预览
+    toggleDrawer(true);
+  </script>
+</body>
+</html>

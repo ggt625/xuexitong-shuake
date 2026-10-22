@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC网课助手 · UI重构样品全景展示与选型对比</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 25, 42, 0.7);
+      --border: rgba(99, 126, 184, 0.2);
+      --accent: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #8b5cf6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 24px 36px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13, 19, 32, 0.8);
+      backdrop-filter: blur(16px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header-left h1 {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+    }
+    .header-left p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+    .main-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 36px 36px;
+      gap: 20px;
+    }
+    .preview-card {
+      flex: 1;
+      height: 680px;
+      background: #000;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .open-full-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .open-full-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .matrix-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .matrix-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      background: rgba(0,0,0,0.2);
+    }
+    td strong {
+      color: #fff;
+    }
+    .tag-sample {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .tag-1 { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+    .tag-2 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .tag-3 { background: rgba(139, 92, 246, 0.2); color: #c084fc; }
+    .tag-4 { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <h1>
+        ABC 网课助手 · UI 重构样品选型看板
+        <span class="badge-pill">不修改主脚本</span>
+      </h1>
+      <p>形态：悬浮气泡 + 右侧抽屉 (420-520px) | 区域结构自由设计，打破传统固定 Tab 结构</p>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchPreview('sample-1-mission-control', this)">
+        <span class="tag-sample tag-1">480px</span>
+        <span>方案一：全景中控流</span>
+      </button>
+      <button class="tab-btn" onclick="switchPreview('sample-2-split-workbench', this)">
+        <span class="tag-sample tag-2">510px</span>
+        <span>方案二：双轨分舱工作台</span>
+      </button>
+      <button class="tab-btn" onclick="switchPreview('sample-3-dynamic-island', this)">
+        <span class="tag-sample tag-3">440px</span>
+        <span>方案三：流体卡片岛与时间轴</span>
+      </button>
+      <button class="tab-btn" onclick="switchPreview('final', this)">
+        <span class="tag-sample tag-4">440px</span>
+        <span>最终版：紧凑助手（推荐）</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- 实时预览窗 -->
+    <div class="preview-card">
+      <a href="sample-1-mission-control/index.html" target="_blank" class="open-full-btn" id="fullLink">
+        <span>全屏独立窗口打开 ↗</span>
+      </a>
+      <iframe id="previewIframe" src="sample-1-mission-control/index.html"></iframe>
+    </div>
+
+    <!-- 三套方案特性与设计差异对照表 -->
+    <div class="matrix-section">
+      <div class="matrix-title">📊 3 套重构方案设计差异与特性对照表</div>
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>方案一：全景中控流 (Mission Control)</th>
+            <th>方案二：双轨分舱工作台 (Split Workbench)</th>
+            <th>方案三：流体卡片岛与时间轴 (Island & Feed)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>设计隐喻与范式</strong></td>
+            <td>飞行仪表中控台 / Bento Stack 纵向聚合</td>
+            <td>专业 IDE 工作台 / 命令条与双轨舱</td>
+            <td>macOS 灵动岛微件 / 决策时间轴流</td>
+          </tr>
+          <tr>
+            <td><strong>抽屉宽度</strong></td>
+            <td><span class="tag-sample tag-1">480px</span></td>
+            <td><span class="tag-sample tag-2">510px</span></td>
+            <td><span class="tag-sample tag-3">440px</span></td>
+          </tr>
+          <tr>
+            <td><strong>悬浮气泡形态</strong></td>
+            <td>呼吸脉冲光环球形微件 (带运行状态徽标)</td>
+            <td>右侧边缘磁吸扁平胶囊 (展开微动效)</td>
+            <td>自适应环形 SVG 进度动态岛药丸</td>
+          </tr>
+          <tr>
+            <td><strong>区域布局创新</strong></td>
+            <td>流水线 Pipeline + 任务巡航卡 + 题目矩阵 + AI 补漏 + 终端日志一体式垂直流</td>
+            <td>52px 极窄功能轨 + 全局命令搜索条 + 双引擎 (题库 vs AI) 左右并列卡 + 诊断面板</td>
+            <td>极简流体岛 + 浮动查题胶囊 + 全局事件时间轴卡片 + 底部毛玻璃 Dock</td>
+          </tr>
+          <tr>
+            <td><strong>状态覆盖 (控制/日志/搜索/AI/设置)</strong></td>
+            <td>
+              • 控制：倍速芯片/静音/防卡死<br>
+              • 日志：HUD 终端可过滤自滚动<br>
+              • 搜索：划词联动与预设芯片<br>
+              • AI：DeepSeek/GPT 模型切换与流式推理<br>
+              • 设置：侧滑覆盖层参数配置
+            </td>
+            <td>
+              • 控制：无级倍速条与弹窗自动跳过<br>
+              • 日志：指标带 + 实时微日志<br>
+              • 搜索：⌘F 顶部即时命令搜索框<br>
+              • AI：题库 vs AI 深度推理双列对比<br>
+              • 设置：侧拉抽屉高级选项
+            </td>
+            <td>
+              • 控制：灵动岛一键变速与任务点打卡<br>
+              • 日志：底部 Dock 展开轻量黑客弹层<br>
+              • 搜索：动态插入时间轴的即搜即得<br>
+              • AI：内嵌于时间轴的采纳/重生成交互<br>
+              • 设置：底部浮动微偏好面板
+            </td>
+          </tr>
+          <tr>
+            <td><strong>交互与动画质感</strong></td>
+            <td>赛博深黑曜石微质感，青蓝霓虹与绿光反馈</td>
+            <td>现代专业 Slate 科技灰，靛蓝聚焦与音浪动画</td>
+            <td>流体毛玻璃质感，渐变紫青与弹簧物理回弹</td>
+          </tr>
+          <tr>
+            <td><strong>代表性平台背景模拟</strong></td>
+            <td>超星学习通真实界面与视频播放区</td>
+            <td>智慧树翻转课堂平台真实播放与章节树</td>
+            <td>综合在线课堂作业/测验答卷与打卡界面</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function switchPreview(path, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('previewIframe').src = `${path}/index.html`;
+      document.getElementById('fullLink').href = `${path}/index.html`;
+    }
+  </script>
+</body>
+</html>

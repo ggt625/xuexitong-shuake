@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ABC 助手 · 清爽工作台</title>
+  <style>
+    :root {
+      --bg: #e9edf2;
+      --canvas: #f4f5f7;
+      --surface: #ffffff;
+      --surface-muted: #f8f9fb;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --line: #e3e7ec;
+      --line-strong: #d4dae2;
+      --accent: #2563eb;
+      --accent-soft: #eff5ff;
+      --success: #0f766e;
+      --warning: #b45309;
+      --radius: 8px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      border: 0;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      background: var(--canvas);
+    }
+
+    .course-page {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 248px 1fr;
+      background: #f7f8fa;
+      color: #7b8491;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .course-aside {
+      padding: 26px 20px;
+      border-right: 1px solid #edf0f3;
+      background: #fbfcfd;
+    }
+
+    .crumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: #9aa3ae;
+      font-size: 11px;
+    }
+
+    .crumb strong { color: #4b5563; font-weight: 600; }
+
+    .course-aside h3 {
+      margin: 0 0 22px;
+      color: #303946;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .chapter-list {
+      display: grid;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 12px;
+    }
+
+    .chapter-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #8a94a1;
+    }
+
+    .chapter-list li.active {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .chapter-list i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #d5dbe3;
+    }
+
+    .chapter-list li.active i { background: var(--accent); }
+
+    .course-main {
+      padding: 52px 64px;
+    }
+
+    .course-main .course-kicker {
+      margin-bottom: 10px;
+      color: #a0a8b2;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .course-main h1 {
+      margin: 0;
+      color: #28313c;
+      font-size: 28px;
+      font-weight: 650;
+      letter-spacing: -.02em;
+    }
+
+    .course-main .subline {
+      margin-top: 10px;
+      color: #9aa3ae;
+      font-size: 12px;
+    }
+
+    .video-shell {
+      display: grid;
+      place-items: center;
+      width: min(760px, 72vw);
+      height: 330px;
+      margin-top: 32px;
+      border: 1px solid #e5e9ef;
+      background: #20252d;
+      box-shadow: 0 18px 48px rgba(37, 47, 63, .08);
+    }
+
+    .video-shell .video-mark {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border: 1px solid rgba(255, 255, 255, .35);
+      border-radius: 50%;
+      color: #d7dce3;
+    }
+
+    .bubble {
+      position: fixed;
+      right: 30px;
+      bottom: 28px;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border: 1px solid #d9e0e9;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 12px 32px rgba(22, 31, 44, .16);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .bubble:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px rgba(22, 31, 44, .2);
+    }
+
+    .bubble svg { display: block; }
+
+    .bubble .dot {
+      position: absolute;
+      top: 7px;
+      right: 6px;
+      width: 9px;
+      height: 9px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .drawer {
+      position: fixed;
+      top: 22px;
+      right: 22px;
+      bottom: 22px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      width: 420px;
+      max-width: calc(100vw - 44px);
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 24px 70px rgba(30, 41, 59, .2);
+      transform: translateX(0);
+      transition: transform .22s ease, opacity .22s ease;
+    }
+
+    .drawer.closed {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(24px);
+    }
+
+    .drawer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -.04em;
+    }
+
+    .brand-title {
+      display: grid;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .brand-title strong {
+      color: #202a36;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .brand-title span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .head-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 24px;
+      padding: 0 9px;
+      border: 1px solid #d6efe9;
+      border-radius: 999px;
+      background: #f1fbf8;
+      color: var(--success);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      color: #6b7280;
+    }
+
+    .icon-btn:hover { background: #f3f5f8; color: #1f2933; }
+
+    .drawer-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 0 18px 20px;
+      scrollbar-width: thin;
+      scrollbar-color: #d8dee7 transparent;
+    }
+
+    .drawer-body::-webkit-scrollbar { width: 6px; }
+    .drawer-body::-webkit-scrollbar-thumb { background: #d8dee7; border-radius: 99px; }
+
+    .overview { padding: 20px 0 18px; border-bottom: 1px solid var(--line); }
+
+    .eyebrow {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .overview h2 {
+      margin: 0;
+      color: #1d2733;
+      font-size: 17px;
+      font-weight: 650;
+      line-height: 1.35;
+      letter-spacing: -.015em;
+    }
+
+    .overview .submeta {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .progress {
+      flex: 1;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #edf0f4;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .progress-line strong {
+      color: #344054;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .meta-grid div {
+      padding: 9px 10px;
+      border-right: 1px solid var(--line);
+      background: var(--surface-muted);
+    }
+
+    .meta-grid div:last-child { border-right: 0; }
+
+    .meta-grid span,
+    .meta-grid strong {
+      display: block;
+    }
+
+    .meta-grid span { color: var(--muted); font-size: 10px; }
+    .meta-grid strong { margin-top: 3px; color: #344054; font-size: 12px; font-weight: 600; }
+
+    .section {
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child { border-bottom: 0; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      color: #263241;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .section-head .hint {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .speed-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8f9fb;
+    }
+
+    .speed-row button {
+      height: 28px;
+      border-radius: 4px;
+      color: #667085;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .speed-row button:hover { color: #344054; background: #fff; }
+
+    .speed-row button.active {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .08);
+    }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 12px;
+    }
+
+    .switch-row + .switch-row { padding-top: 9px; }
+
+    .switch-copy { display: grid; gap: 2px; }
+    .switch-copy strong { color: #344054; font-size: 12px; font-weight: 500; }
+    .switch-copy span { color: var(--muted); font-size: 11px; }
+
+    .switch {
+      position: relative;
+      flex: 0 0 auto;
+      width: 32px;
+      height: 18px;
+      border-radius: 999px;
+      background: #d7dde6;
+      transition: background .18s ease;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .16);
+      transition: transform .18s ease;
+    }
+
+    .switch.on { background: var(--accent); }
+    .switch.on::after { transform: translateX(14px); }
+
+    .task-list {
+      display: grid;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid var(--line);
+    }
+
+    .task-list li {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      min-height: 42px;
+      border-bottom: 1px solid var(--line);
+      color: #667085;
+      font-size: 12px;
+    }
+
+    .task-list li:last-child { border-bottom: 0; }
+
+    .task-index {
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      border: 1px solid #d5dbe4;
+      border-radius: 50%;
+      color: #98a2b3;
+      font-size: 10px;
+    }
+
+    .task-list li.done { color: #667085; }
+    .task-list li.done .task-index { border-color: #c6eee6; background: #f1fbf8; color: var(--success); }
+    .task-list li.active { color: #1d2733; font-weight: 600; }
+    .task-list li.active .task-index { border-color: #bfd5ff; background: var(--accent-soft); color: var(--accent); }
+
+    .task-state {
+      color: #98a2b3;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .task-list li.active .task-state { color: var(--accent); }
+
+    .question {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-muted);
+    }
+
+    .question-meta {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .question-title {
+      margin-top: 5px;
+      color: #263241;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .answer {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #e6eaf0;
+      color: #156f64;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: #e9f8f4;
+      color: var(--success);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .question-foot {
+      margin-top: 8px;
+      color: #98a2b3;
+      font-size: 10px;
+    }
+
+    .log-box {
+      overflow: hidden;
+      border: 1px solid #202b3a;
+      border-radius: 6px;
+      background: #17202d;
+      color: #b8c4d4;
+      font: 10px/1.8 var(--mono);
+    }
+
+    .log-line {
+      display: grid;
+      grid-template-columns: 62px 38px 1fr;
+      gap: 6px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+
+    .log-line time { color: #708198; }
+    .log-tag { color: #7aa2ff; }
+    .log-line.warn .log-tag { color: #e9b36b; }
+    .log-line.ok .log-tag { color: #68d3c1; }
+
+    .text-btn {
+      padding: 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .text-btn:hover { color: var(--accent); }
+
+    .drawer-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 0 14px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .tabs { display: flex; align-items: center; gap: 3px; }
+
+    .tabs button {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 5px;
+      color: #8b95a2;
+    }
+
+    .tabs button:hover,
+    .tabs button.active { background: var(--accent-soft); color: var(--accent); }
+
+    .settings-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 5px;
+      color: #667085;
+      font-size: 11px;
+    }
+
+    .settings-btn:hover { background: #f3f5f8; color: #1f2933; }
+
+    svg.icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    @media (max-width: 760px) {
+      .course-page { grid-template-columns: 1fr; }
+      .course-aside { display: none; }
+      .course-main { padding: 34px 22px; }
+      .course-main h1 { font-size: 22px; }
+      .video-shell { width: 100%; height: 250px; }
+      .drawer { top: 10px; right: 10px; bottom: 10px; width: calc(100vw - 20px); }
+      .bubble { right: 18px; bottom: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="course-page" aria-hidden="true">
+      <aside class="course-aside">
+        <div class="crumb"><span>超星学习通</span><span>/</span><strong>教学空间</strong></div>
+        <h3>毛泽东思想和中国特色社会主义理论体系概论</h3>
+        <ul class="chapter-list">
+          <li><span>第一章 马克思主义中国化</span><i></i></li>
+          <li><span>第二章 新民主主义革命理论</span><i></i></li>
+          <li class="active"><span>第三章 思想路线的形成与发展</span><i></i></li>
+          <li><span>第四章 社会主义建设道路</span><i></i></li>
+          <li><span>第五章 邓小平理论</span><i></i></li>
+        </ul>
+      </aside>
+      <main class="course-main">
+        <div class="course-kicker">第 3 章 / 视频任务点</div>
+        <h1>实事求是思想路线的确立与检验</h1>
+        <div class="subline">学习通原生播放器正在运行中 · ABC 助手已接管音视频流水线</div>
+        <div class="video-shell">
+          <div class="video-mark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <button class="bubble" id="bubble" aria-label="打开 ABC 助手">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+        <circle cx="14" cy="14" r="10" fill="none" stroke="#e6ebf2" stroke-width="2.5"/>
+        <circle cx="14" cy="14" r="10" fill="none" stroke="#2563eb" stroke-width="2.5"
+          stroke-dasharray="53.4 62.8" stroke-linecap="round" transform="rotate(-90 14 14)"/>
+        <circle cx="14" cy="14" r="3.2" fill="#2563eb"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+
+    <aside class="drawer" id="drawer" aria-label="ABC 助手面板">
+      <header class="drawer-head">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div class="brand-title">
+            <strong>ABC 助手</strong>
+            <span>课程自动化 · 本地运行</span>
+          </div>
+        </div>
+        <div class="head-actions">
+          <span class="status-pill">运行中</span>
+          <button class="icon-btn" id="close" aria-label="关闭面板">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="drawer-body">
+        <section class="overview">
+          <div class="eyebrow">当前章节</div>
+          <h2>实事求是思想路线的确立与检验</h2>
+          <div class="submeta">视频任务点 · 第 3 章 · 自动巡航</div>
+          <div class="progress-line">
+            <div class="progress"><span style="width:85%"></span></div>
+            <strong>85%</strong>
+          </div>
+          <div class="meta-grid">
+            <div><span>已播放</span><strong>12:18</strong></div>
+            <div><span>当前倍速</span><strong>1.5x</strong></div>
+            <div><span>剩余任务</span><strong>2 项</strong></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>播放控制</h3>
+            <span class="hint">已接管播放器</span>
+          </div>
+          <div class="speed-row" id="speedRow">
+            <button>1.0x</button>
+            <button>1.25x</button>
+            <button class="active">1.5x</button>
+            <button>2.0x</button>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy">
+              <strong>静音播放</strong>
+              <span>避免多个任务点同时发声</span>
+            </div>
+            <button class="switch on" data-switch aria-label="切换静音播放"></button>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy">
+              <strong>自动下一节</strong>
+              <span>完成后按章节顺序继续</span>
+            </div>
+            <button class="switch on" data-switch aria-label="切换自动下一节"></button>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>任务进度</h3>
+            <span class="hint">2 / 4</span>
+          </div>
+          <ol class="task-list">
+            <li class="done"><span class="task-index">1</span><span>导读文档</span><span class="task-state">已完成</span></li>
+            <li class="active"><span class="task-index">2</span><span>视频播放</span><span class="task-state">进行中 85%</span></li>
+            <li><span class="task-index">3</span><span>章节测验</span><span class="task-state">待处理</span></li>
+            <li><span class="task-index">4</span><span>自动交卷</span><span class="task-state">未开始</span></li>
+          </ol>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>章节测验</h3>
+            <span class="hint">9 / 10 命中</span>
+          </div>
+          <div class="question">
+            <div class="question-meta">单选题 · 第 4 题</div>
+            <div class="question-title">党的思想路线的实质和核心是？</div>
+            <div class="answer"><span class="tag">答案</span><span>B. 实事求是</span></div>
+            <div class="question-foot">题库命中 · 置信度 99% · 已自动填入</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>运行日志</h3>
+            <button class="text-btn" id="clearLog">清空</button>
+          </div>
+          <div class="log-box" id="logBox">
+            <div class="log-line"><time>10:24:18</time><span class="log-tag">题库</span><span>命中 3 道题，等待自动填入</span></div>
+            <div class="log-line ok"><time>10:24:22</time><span class="log-tag">AI</span><span>补漏完成，置信度 99.4%</span></div>
+            <div class="log-line warn"><time>10:24:25</time><span class="log-tag">视频</span><span>检测到暂停，已恢复播放</span></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="drawer-foot">
+        <nav class="tabs" aria-label="功能切换">
+          <button class="active" aria-label="控制">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>
+          </button>
+          <button aria-label="日志">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v14H5zM8 9h8M8 13h8M8 17h5"/></svg>
+          </button>
+          <button aria-label="搜索">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></svg>
+          </button>
+          <button aria-label="AI">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg>
+          </button>
+        </nav>
+        <button class="settings-btn" aria-label="设置">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.7-1.7.1-.1A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.6-1H6.6v-2.4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.7-1.7.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2V14h-.2a1.7 1.7 0 0 0-1.6 1z"/></svg>
+          <span>设置</span>
+        </button>
+      </footer>
+    </aside>
+  </div>
+
+  <script>
+    const drawer = document.getElementById('drawer');
+    const bubble = document.getElementById('bubble');
+    const close = document.getElementById('close');
+    const speedRow = document.getElementById('speedRow');
+    const logBox = document.getElementById('logBox');
+
+    bubble.addEventListener('click', () => drawer.classList.remove('closed'));
+    close.addEventListener('click', () => drawer.classList.add('closed'));
+
+    speedRow.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      speedRow.querySelectorAll('button').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+    });
+
+    document.querySelectorAll('[data-switch]').forEach((button) => {
+      button.addEventListener('click', () => button.classList.toggle('on'));
+    });
+
+    document.getElementById('clearLog').addEventListener('click', () => {
+      logBox.innerHTML = '<div class="log-line ok"><time>--:--:--</time><span class="log-tag">系统</span><span>日志已清空</span></div>';
+    });
+  </script>
+</body>
+</html>

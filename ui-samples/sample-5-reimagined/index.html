@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ABC 学习助手 · Nordic Calm</title>
+  <style>
+    :root {
+      --paper: #f8f7f2;
+      --paper-deep: #efeee8;
+      --surface: rgba(255, 255, 253, .92);
+      --ink: #28332e;
+      --ink-soft: #4d5b53;
+      --muted: #7e8881;
+      --line: rgba(55, 72, 63, .14);
+      --line-soft: rgba(55, 72, 63, .09);
+      --sage: #6f8b78;
+      --sage-deep: #4f6b58;
+      --sage-soft: #e7efe9;
+      --amber: #b0804f;
+      --slate: #2d3934;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #e8e7e1;
+      color: var(--ink);
+      font: 13px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+
+    button {
+      border: 0;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,255,255,.7), transparent 28%),
+        linear-gradient(135deg, #efeee8 0%, #e5e5de 100%);
+    }
+
+    .course-shell {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 226px 1fr;
+      color: #7a847d;
+      filter: saturate(.72);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .course-side {
+      padding: 32px 24px;
+      border-right: 1px solid rgba(55, 72, 63, .08);
+      background: rgba(248, 247, 242, .72);
+      backdrop-filter: blur(10px);
+    }
+
+    .course-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 30px;
+      color: #58655d;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .course-brand span {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: #d7ded7;
+      color: #58655d;
+      font-size: 10px;
+    }
+
+    .course-side h2 {
+      margin: 0 0 26px;
+      color: #3e4b43;
+      font: 600 18px/1.35 "Songti SC", "STSong", "Noto Serif SC", serif;
+    }
+
+    .chapter-list {
+      display: grid;
+      gap: 16px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 12px;
+    }
+
+    .chapter-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #8a948d;
+    }
+
+    .chapter-list li::before {
+      content: "";
+      flex: 0 0 auto;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #c3cbc4;
+    }
+
+    .chapter-list li.active {
+      color: var(--sage-deep);
+      font-weight: 600;
+    }
+
+    .chapter-list li.active::before { background: var(--sage); }
+
+    .course-main {
+      padding: 64px 70px;
+    }
+
+    .course-kicker {
+      margin-bottom: 8px;
+      color: #929b94;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .course-main h1 {
+      margin: 0;
+      color: #36433b;
+      font: 600 30px/1.35 "Songti SC", "STSong", "Noto Serif SC", serif;
+      letter-spacing: .01em;
+    }
+
+    .course-sub {
+      margin-top: 10px;
+      color: #8c968f;
+      font-size: 12px;
+    }
+
+    .video-frame {
+      display: grid;
+      place-items: center;
+      width: min(720px, 72vw);
+      height: 320px;
+      margin-top: 34px;
+      border: 1px solid rgba(55, 72, 63, .12);
+      background: #2b332f;
+      box-shadow: 0 18px 48px rgba(38, 49, 44, .08);
+    }
+
+    .video-frame .play-mark {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border: 1px solid rgba(255,255,255,.42);
+      border-radius: 50%;
+      color: #dce4de;
+    }
+
+    .bubble {
+      position: fixed;
+      right: 28px;
+      bottom: 26px;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      width: 50px;
+      height: 50px;
+      border: 1px solid rgba(79, 107, 88, .18);
+      border-radius: 50%;
+      background: rgba(255,255,253,.92);
+      box-shadow: 0 12px 30px rgba(44, 58, 50, .14);
+      backdrop-filter: blur(12px);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .bubble:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px rgba(44, 58, 50, .18);
+    }
+
+    .bubble .dot {
+      position: absolute;
+      top: 6px;
+      right: 5px;
+      width: 8px;
+      height: 8px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: var(--sage);
+    }
+
+    .drawer {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      width: 440px;
+      max-width: calc(100vw - 36px);
+      overflow: hidden;
+      border: 1px solid rgba(79, 107, 88, .16);
+      border-radius: 14px;
+      background: rgba(250, 249, 245, .93);
+      box-shadow: 0 28px 80px rgba(38, 49, 44, .22);
+      backdrop-filter: blur(24px) saturate(.9);
+      transition: transform .22s ease, opacity .22s ease;
+    }
+
+    .drawer.closed {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(22px);
+    }
+
+    .drawer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 31px;
+      height: 31px;
+      border: 1px solid rgba(79, 107, 88, .18);
+      border-radius: 8px;
+      background: rgba(231, 239, 233, .8);
+      color: var(--sage-deep);
+      font: 600 11px/1 "Inter", sans-serif;
+      letter-spacing: .04em;
+    }
+
+    .brand-copy { display: grid; gap: 1px; min-width: 0; }
+
+    .brand-copy strong {
+      color: #2f3b34;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .brand-copy span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .head-actions { display: flex; align-items: center; gap: 4px; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 23px;
+      padding: 0 9px;
+      border: 1px solid rgba(111, 139, 120, .2);
+      border-radius: 999px;
+      background: rgba(231, 239, 233, .72);
+      color: var(--sage-deep);
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      color: #7d877f;
+    }
+
+    .icon-btn:hover { background: rgba(111, 139, 120, .1); color: var(--ink); }
+
+    .drawer-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 0 20px 18px;
+      scrollbar-width: thin;
+      scrollbar-color: #ced6cf transparent;
+    }
+
+    .drawer-body::-webkit-scrollbar { width: 6px; }
+    .drawer-body::-webkit-scrollbar-thumb { background: #ced6cf; border-radius: 99px; }
+
+    .overview { padding: 22px 0 18px; border-bottom: 1px solid var(--line-soft); }
+
+    .eyebrow {
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .overview h2 {
+      margin: 0;
+      color: #2f3b34;
+      font: 600 19px/1.42 "Songti SC", "STSong", "Noto Serif SC", serif;
+      letter-spacing: .01em;
+    }
+
+    .overview .submeta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .progress-line { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+
+    .progress {
+      flex: 1;
+      height: 4px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(111, 139, 120, .14);
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--sage);
+    }
+
+    .progress-line strong {
+      color: var(--sage-deep);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 16px;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .stat-row div { padding: 10px 0; }
+    .stat-row div + div { padding-left: 14px; border-left: 1px solid var(--line-soft); }
+
+    .stat-row span,
+    .stat-row strong { display: block; }
+
+    .stat-row span { color: var(--muted); font-size: 10px; }
+    .stat-row strong { margin-top: 3px; color: #425047; font-size: 12px; font-weight: 600; }
+
+    .section { padding: 18px 0; border-bottom: 1px solid var(--line-soft); }
+    .section:last-child { border-bottom: 0; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      color: #3a473f;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .section-head .hint { color: var(--muted); font-size: 10px; }
+
+    .now-playing {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 12px 0;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .play-button {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(79, 107, 88, .18);
+      border-radius: 50%;
+      background: rgba(231, 239, 233, .72);
+      color: var(--sage-deep);
+    }
+
+    .now-copy { display: grid; gap: 2px; min-width: 0; }
+    .now-copy strong { color: #3a473f; font-size: 12px; font-weight: 600; }
+    .now-copy span { color: var(--muted); font-size: 10px; }
+
+    .speed-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+      margin-top: 12px;
+      padding: 3px;
+      border: 1px solid var(--line-soft);
+      border-radius: 7px;
+      background: rgba(255,255,255,.42);
+    }
+
+    .speed-row button {
+      height: 26px;
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .speed-row button:hover { color: var(--ink-soft); background: rgba(255,255,255,.8); }
+    .speed-row button.active { background: var(--sage-soft); color: var(--sage-deep); }
+
+    .switch-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding-top: 12px;
+    }
+
+    .switch-line + .switch-line { padding-top: 9px; }
+
+    .switch-copy { display: grid; gap: 2px; }
+    .switch-copy strong { color: #435047; font-size: 11px; font-weight: 500; }
+    .switch-copy span { color: var(--muted); font-size: 10px; }
+
+    .switch {
+      position: relative;
+      flex: 0 0 auto;
+      width: 30px;
+      height: 17px;
+      border-radius: 999px;
+      background: #d5dbd6;
+      transition: background .18s ease;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(38, 49, 44, .16);
+      transition: transform .18s ease;
+    }
+
+    .switch.on { background: var(--sage); }
+    .switch.on::after { transform: translateX(13px); }
+
+    .timeline {
+      display: grid;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .timeline li {
+      position: relative;
+      display: grid;
+      grid-template-columns: 18px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 38px;
+      color: #7e8881;
+      font-size: 11px;
+    }
+
+    .timeline li:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 25px;
+      bottom: -8px;
+      left: 8px;
+      width: 1px;
+      background: rgba(79, 107, 88, .14);
+    }
+
+    .timeline .node {
+      display: grid;
+      place-items: center;
+      width: 17px;
+      height: 17px;
+      border: 1px solid #cfd7d1;
+      border-radius: 50%;
+      background: var(--paper);
+      color: #9aa49d;
+      font-size: 9px;
+    }
+
+    .timeline li.done .node {
+      border-color: rgba(111, 139, 120, .32);
+      background: var(--sage-soft);
+      color: var(--sage-deep);
+    }
+
+    .timeline li.active {
+      color: #334038;
+      font-weight: 600;
+    }
+
+    .timeline li.active .node {
+      border-color: var(--sage);
+      background: var(--sage);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(111, 139, 120, .12);
+    }
+
+    .timeline .state { color: #9aa49d; font-size: 10px; font-weight: 400; }
+    .timeline li.active .state { color: var(--sage-deep); }
+    .timeline li.blocked .state { color: var(--amber); }
+
+    .blocked-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 9px 10px;
+      border-left: 2px solid rgba(176, 128, 79, .5);
+      background: rgba(176, 128, 79, .06);
+      color: #8b6b45;
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .question {
+      padding: 0;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .question-meta { padding-top: 11px; color: var(--muted); font-size: 10px; }
+
+    .question-title {
+      margin-top: 5px;
+      color: #37443c;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.55;
+    }
+
+    .answer-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 9px;
+      color: var(--sage-deep);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: var(--sage-soft);
+      color: var(--sage-deep);
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .question-foot {
+      margin-top: 7px;
+      color: #98a29b;
+      font-size: 10px;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 9px;
+      padding-bottom: 2px;
+    }
+
+    .text-action {
+      padding: 0;
+      color: var(--sage-deep);
+      font-size: 10px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .log-box {
+      overflow: hidden;
+      border: 1px solid rgba(55, 72, 63, .1);
+      border-radius: 6px;
+      background: rgba(45, 57, 52, .94);
+      color: #c3ccc6;
+      font: 9px/1.8 var(--mono);
+    }
+
+    .log-line {
+      display: grid;
+      grid-template-columns: 58px 34px 1fr;
+      gap: 6px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+
+    .log-line time { color: #7f8e84; }
+    .log-tag { color: #9eb8a8; }
+    .log-line.warn .log-tag { color: #d0a06e; }
+    .log-line.ok .log-tag { color: #8fc4aa; }
+
+    .text-btn { padding: 0; color: var(--muted); font-size: 9px; }
+    .text-btn:hover { color: var(--sage-deep); }
+
+    .drawer-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 50px;
+      padding: 0 14px;
+      border-top: 1px solid var(--line-soft);
+      background: rgba(250, 249, 245, .9);
+    }
+
+    .tabs { display: flex; align-items: center; gap: 3px; }
+
+    .tabs button {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 5px;
+      color: #8b968e;
+    }
+
+    .tabs button:hover,
+    .tabs button.active { background: var(--sage-soft); color: var(--sage-deep); }
+
+    .settings-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .settings-btn:hover { background: var(--sage-soft); color: var(--sage-deep); }
+
+    .icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+    .settings-sheet {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      background: rgba(250, 249, 245, .99);
+      transform: translateY(100%);
+      transition: transform .24s ease;
+    }
+
+    .settings-sheet.open { transform: translateY(0); }
+
+    .settings-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 62px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .settings-head strong { color: #334038; font-size: 13px; font-weight: 600; }
+    .settings-body { flex: 1; overflow: auto; padding: 18px; }
+
+    .field { display: grid; gap: 6px; margin-bottom: 16px; }
+    .field label { color: #5d6a61; font-size: 10px; font-weight: 600; }
+    .field input,
+    .field select {
+      width: 100%;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      outline: none;
+      background: rgba(255,255,255,.7);
+      color: #37443c;
+      font-size: 11px;
+    }
+
+    .field input:focus,
+    .field select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(111, 139, 120, .1); }
+
+    .field .help { color: #97a29a; font-size: 9px; }
+
+    .save-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 36px;
+      margin-top: 8px;
+      border-radius: 6px;
+      background: var(--sage);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 760px) {
+      .course-shell { grid-template-columns: 1fr; }
+      .course-side { display: none; }
+      .course-main { padding: 38px 22px; }
+      .course-main h1 { font-size: 23px; }
+      .video-frame { width: 100%; height: 240px; }
+      .drawer { top: 8px; right: 8px; bottom: 8px; width: calc(100vw - 16px); }
+      .bubble { right: 18px; bottom: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="course-shell" aria-hidden="true">
+      <aside class="course-side">
+        <div class="course-brand"><span>ABC</span>学习空间</div>
+        <h2>毛泽东思想和中国特色社会主义理论体系概论</h2>
+        <ul class="chapter-list">
+          <li>马克思主义中国化</li>
+          <li>新民主主义革命理论</li>
+          <li class="active">思想路线的形成与发展</li>
+          <li>社会主义建设道路</li>
+          <li>邓小平理论</li>
+        </ul>
+      </aside>
+      <main class="course-main">
+        <div class="course-kicker">第 3 章 / 视频任务点</div>
+        <h1>实事求是思想路线的确立与检验</h1>
+        <div class="course-sub">学习通原生播放器运行中 · ABC 助手已接管学习流程</div>
+        <div class="video-frame">
+          <div class="play-mark">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <button class="bubble" id="bubble" aria-label="打开学习助手">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(111,139,120,.18)" stroke-width="2.4"/>
+        <circle cx="14" cy="14" r="10" fill="none" stroke="#6f8b78" stroke-width="2.4"
+          stroke-dasharray="53.4 62.8" stroke-linecap="round" transform="rotate(-90 14 14)"/>
+        <circle cx="14" cy="14" r="3" fill="#4f6b58"/>
+      </svg>
+      <span class="dot"></span>
+    </button>
+
+    <aside class="drawer" id="drawer" aria-label="学习助手面板">
+      <header class="drawer-head">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div class="brand-copy">
+            <strong>学习助手</strong>
+            <span>本地运行 · 自动巡航</span>
+          </div>
+        </div>
+        <div class="head-actions">
+          <span class="status">运行中</span>
+          <button class="icon-btn" id="close" aria-label="关闭面板">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="drawer-body">
+        <section class="overview">
+          <div class="eyebrow">当前章节</div>
+          <h2>实事求是思想路线的确立与检验</h2>
+          <div class="submeta">视频任务点 · 第 3 章 · 已学习 12:18</div>
+          <div class="progress-line">
+            <div class="progress"><span style="width:85%"></span></div>
+            <strong>85%</strong>
+          </div>
+          <div class="stat-row">
+            <div><span>当前倍速</span><strong>1.5x</strong></div>
+            <div><span>剩余时间</span><strong>02:12</strong></div>
+            <div><span>任务点</span><strong>2 / 4</strong></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>当前任务</h3>
+            <span class="hint">自动接管</span>
+          </div>
+          <div class="now-playing">
+            <button class="play-button" aria-label="暂停">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
+            </button>
+            <div class="now-copy">
+              <strong>视频播放中</strong>
+              <span>12:18 / 14:30 · 静音 · 心跳正常</span>
+            </div>
+          </div>
+          <div class="speed-row" id="speedRow">
+            <button>1.0x</button>
+            <button>1.25x</button>
+            <button class="active">1.5x</button>
+            <button>2.0x</button>
+          </div>
+          <div class="switch-line">
+            <div class="switch-copy">
+              <strong>自动下一节</strong>
+              <span>完成后按顺序继续</span>
+            </div>
+            <button class="switch on" data-switch aria-label="自动下一节"></button>
+          </div>
+          <div class="switch-line">
+            <div class="switch-copy">
+              <strong>防卡死心跳</strong>
+              <span>播放器停住时自动恢复</span>
+            </div>
+            <button class="switch on" data-switch aria-label="防卡死心跳"></button>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>任务进度</h3>
+            <span class="hint">2 / 4</span>
+          </div>
+          <ol class="timeline">
+            <li class="done"><span class="node">1</span><span>导读文档</span><span class="state">完成</span></li>
+            <li class="active"><span class="node">2</span><span>视频播放</span><span class="state">85%</span></li>
+            <li class="blocked"><span class="node">3</span><span>章节测验</span><span class="state">待处理</span></li>
+            <li><span class="node">4</span><span>自动交卷</span><span class="state">未开始</span></li>
+          </ol>
+          <div class="blocked-note">
+            平台提示：当前章节还有任务点未完成。脚本会自动进入「去学习」并继续处理。
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>章节测验</h3>
+            <span class="hint">9 / 10 命中</span>
+          </div>
+          <div class="question">
+            <div class="question-meta">单选题 · 第 4 题</div>
+            <div class="question-title">党的思想路线的实质和核心是？</div>
+            <div class="answer-line"><span class="tag">答案</span><span>B. 实事求是</span></div>
+            <div class="question-foot">题库命中 · 置信度 99% · 已自动填入</div>
+            <div class="question-actions">
+              <button class="text-action">AI 补漏</button>
+              <button class="text-action">查看解析</button>
+              <button class="text-action">下一题</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h3>运行日志</h3>
+            <button class="text-btn" id="clearLog">清空</button>
+          </div>
+          <div class="log-box" id="logBox">
+            <div class="log-line"><time>10:24:18</time><span class="log-tag">题库</span><span>命中 3 道题，等待自动填入</span></div>
+            <div class="log-line ok"><time>10:24:22</time><span class="log-tag">AI</span><span>补漏完成，置信度 99.4%</span></div>
+            <div class="log-line warn"><time>10:24:25</time><span class="log-tag">视频</span><span>检测到暂停，已恢复播放</span></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="drawer-foot">
+        <nav class="tabs" aria-label="功能切换">
+          <button class="active" aria-label="控制">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>
+          </button>
+          <button aria-label="日志">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v14H5zM8 9h8M8 13h8M8 17h5"/></svg>
+          </button>
+          <button aria-label="搜索">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></svg>
+          </button>
+          <button aria-label="AI">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg>
+          </button>
+        </nav>
+        <button class="settings-btn" id="openSettings" aria-label="打开设置">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.7-1.7.1-.1A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.6-1H6.6v-2.4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.7-1.7.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2V14h-.2a1.7 1.7 0 0 0-1.6 1z"/></svg>
+          <span>设置</span>
+        </button>
+      </footer>
+
+      <div class="settings-sheet" id="settingsSheet">
+        <div class="settings-head">
+          <button class="icon-btn" id="closeSettings" aria-label="返回">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <strong>设置</strong>
+        </div>
+        <div class="settings-body">
+          <div class="field">
+            <label>API 地址</label>
+            <input value="https://api.deepseek.com/v1">
+            <span class="help">兼容 OpenAI Chat Completions 接口</span>
+          </div>
+          <div class="field">
+            <label>模型</label>
+            <select><option>deepseek-chat</option><option>gpt-4o-mini</option><option>qwen-plus</option></select>
+          </div>
+          <div class="field">
+            <label>API Key</label>
+            <input type="password" value="sk-xxxxxxxxxxxx">
+          </div>
+          <div class="field">
+            <label>自动交卷阈值</label>
+            <input value="85%">
+          </div>
+          <div class="field">
+            <label>搜题间隔</label>
+            <input value="2.5 秒">
+          </div>
+          <button class="save-btn" id="saveSettings">保存生效</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const drawer = document.getElementById('drawer');
+    const bubble = document.getElementById('bubble');
+    const close = document.getElementById('close');
+    const speedRow = document.getElementById('speedRow');
+    const logBox = document.getElementById('logBox');
+    const settingsSheet = document.getElementById('settingsSheet');
+
+    bubble.addEventListener('click', () => drawer.classList.remove('closed'));
+    close.addEventListener('click', () => drawer.classList.add('closed'));
+
+    speedRow.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      speedRow.querySelectorAll('button').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+    });
+
+    document.querySelectorAll('[data-switch]').forEach((button) => {
+      button.addEventListener('click', () => button.classList.toggle('on'));
+    });
+
+    document.getElementById('clearLog').addEventListener('click', () => {
+      logBox.innerHTML = '<div class="log-line ok"><time>--:--:--</time><span class="log-tag">系统</span><span>日志已清空</span></div>';
+    });
+
+    document.getElementById('openSettings').addEventListener('click', () => settingsSheet.classList.add('open'));
+    document.getElementById('closeSettings').addEventListener('click', () => settingsSheet.classList.remove('open'));
+    document.getElementById('saveSettings').addEventListener('click', () => {
+      settingsSheet.classList.remove('open');
+      logBox.insertAdjacentHTML('afterbegin', '<div class="log-line ok"><time>10:25:04</time><span class="log-tag">设置</span><span>配置已保存，下一轮生效</span></div>');
+    });
+  </script>
+</body>
+</html>
